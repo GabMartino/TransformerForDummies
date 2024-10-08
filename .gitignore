@@ -1,0 +1,10 @@
+
+
+
+./lightning_logs
+./logs
+./outputs
+
+./Datasets/*
+./checkpoints/*
+./test.py

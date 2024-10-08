@@ -1,0 +1,43 @@
+
+
+
+##### DATASET PARAMETERS
+source_language:
+  name: English
+  dataset_path: "./Datasets/it-en/europarl-v7.it-en.en"
+
+target_language:
+  name: Italian
+  dataset_path: "./Datasets/it-en/europarl-v7.it-en.it"
+
+maximum_dataset_lenght: 10000
+
+###### ENCODER
+encoder:
+  vocab_size: 10000
+  num_layers: 1
+  ff_hidden_size: 512
+
+
+#### DECODER
+decoder:
+  vocab_size: 10000
+  num_layers: 1
+  ff_hidden_size: 512
+
+#### BOTH
+embedding_size: 64
+num_heads: 8
+
+### TRAINING CONFIG
+
+checkpoint_dir: "./checkpoints"
+logs_dir: "./logs"
+from_checkpoint: False
+train: True
+test: True
+
+max_epochs: 1
+lr: 1e-3
+batch_size: 3
+dropout: 0.1
