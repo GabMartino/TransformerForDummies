@@ -287,20 +287,18 @@ Hence:
 #### - **Encoder-Decoder Cross-Attention block: NO PADDING**
 
 <p align="center">
-<img src="./assets/Transformer_architecture_modified.jpg" alt="Paragraph" width="50%"/>
+<img src="./assets/Transformer_architecture_modified.jpg" alt="Transformer Architecture with masks annotated" width="50%"/>
 </p>
-
-
 
 ### 4) How is done the Padding Mask? and how is employed?
 
 First, if we want to talk about Padding mask we need to consider the Batch size > 1 that we'll name $B$. Hence, $Q \in \mathbb{R}^{B \times L \times E}, K \in \mathbb{R}^{B \times L \times E}, V \in \mathbb{R}^{B \times L \times E}$, $L$ is the sequence lenght and $E$ is the embedding size.
 
-Now, we'll use an arbitraty value for the padding token $[PAD]$, to align all the $|B|$ sequences to the same lenght $L$. 
+Now, we'll use an arbitrary value for the padding token $[PAD]$, to align all the $|B|$ sequences to the same lenght $L$. 
 
 As an example, the "proto-padding-mask" where $|B| = 4$ and $|L| = 6$, will be:
 
-$$ |B| \Biggl\{ \underbrace{\begin{bmatrix} x_1 & x_2 & [PAD] & [PAD] & [PAD] & [PAD] \\\
+$$|B| \underbrace{\begin{bmatrix} x_1 & x_2 & [PAD] & [PAD] & [PAD] & [PAD] \\\
     x_3 & x_4 & x_5 & x_6 & [PAD] & [PAD] \\\
 x_7 & x_8 & x_9 & [PAD] & [PAD] & [PAD] \\\
 x_{10} & x_{11} & x_{12} & x_{13}] & x_{14} & [PAD] 
@@ -314,9 +312,9 @@ $$
 
 for the operation $QK^{T}$ the transposition for the tensor $K$ is done only on the last two dimensions (the batch dim is not considered), so 
 
+$$QK^{T} \in \mathbb{R}^{(B \times L \times E) \times (B \times E \times L) } = \mathbb{R}^{B \times L \times L}
 $$
-QK^{T} \in \mathbb{R}^{(B \times L \times E) \times (B \times E \times L) } = \mathbb{R}^{B \times L \times L}
-$$
+
 Now, for each sentence in the set of size $|B|$ we have a $L \times L$ matrix that should be masked. 
 To better understand how to construct our padding mask we can make and example with a single sentence, let's say the third row!
 
@@ -326,10 +324,10 @@ x_9 \\\
 [PAD] \\\
 [PAD] \\\ 
 [PAD] \end{bmatrix}\in \mathbb{R}^{1xLxE}$$
+
 Considering every element like $x_7 \in \mathbb{R}^{E}$. So,
 
-$$
-QK^{T} = \begin{bmatrix}x_7 \\\
+$$QK^{T} = \begin{bmatrix}x_7 \\\
 x_8 \\\
 x_9 \\\
 [PAD] \\\
@@ -369,4 +367,4 @@ vals = padding_mask[:, i, j]
 padding_mask = padding_mask.transpose(-2, -1)
 padding_mask[:, i, j] = vals
 ```
-but I'm pretty sure more efficient ways exists
+but I'm pretty sure more efficient ways exists.
