@@ -238,7 +238,7 @@ For this reason, we:
 ## The Padding Mask: requires a paragraph for itself...
 ### 1) What if I do not want to use multiple sentences?? That means BATCH SIZE = 1?
 
-#### ***<p style="text-align:center;">In this case we don't need a padding mask</p>***
+### ***<p style="text-align:center;">In this case we don't need a padding mask</p>***
 
 ### 2) Wait? But the input encoder sentence and the input decoder sentence can have different lenghts? What about the padding then?
 
@@ -259,10 +259,13 @@ Then, after the attention computation:
 $$softmax(\frac{QK^{T}}{\sqrt{|E|}})V \in \mathbb{R}^{(L_2 \times L_1) \times (L_1 \times E)} = \mathbb{R}^{L_2 \times E}$$
 
 So,
-#### ***<p style="text-align:center;">Yes, the encoder and decoder sequences can have different lenght, in this case the output of the decoder will have the same decoder lenght. </p>***
+### ***<p style="text-align:center;">Yes, the encoder and decoder sequences can have different lenght, in this case the output of the decoder will have the same decoder lenght. </p>***
 
 From a practical point of view, I've never seen an implementation with different lenghts, because it's easier to implement and because it mostly has no sense to do it otherwise.
 The only reason in which I could implement different lenghts encoder-decoder is when the lenghts of the sentences in the dataset are strongly different in the distribution between the source and target languages (assuming a translation task), in this case maybe I could have a speed up in the computation.
+
+### ***<p style="text-align:center;">In the case we want to the use (as often done) the same sequence lenght for both encoder and decoder, you probably we'll need a padding mask, also in the case of batch size = 1.</p>***
+
 
 ### 3) Ok, but the Transformer has 3 attention blocks in which one I should insert the padding mask?
 
@@ -278,9 +281,92 @@ it is possible to use all the embeddings vectors, so not padding mask in the cro
 seems natural the usage.
 
 Hence:
-- **Encoder Self-Attention block: PADDING MASK**
-- **Decoder MASKED Self-Attention block: PADDING MASK + CAUSAL MASK**
-- **Encoder-Decoder Cross-Attention block: NO PADDING**
+
+#### - **Encoder Self-Attention block: PADDING MASK**
+#### - **Decoder MASKED Self-Attention block: PADDING MASK + CAUSAL MASK**
+#### - **Encoder-Decoder Cross-Attention block: NO PADDING**
+
+<p align="center">
+<img src="./assets/Transformer_architecture_modified.jpg" alt="Paragraph" width="50%"/>
+</p>
+
 
 
 ### 4) How is done the Padding Mask? and how is employed?
+
+First, if we want to talk about Padding mask we need to consider the Batch size > 1 that we'll name $B$. Hence, $Q \in \mathbb{R}^{B \times L \times E}, K \in \mathbb{R}^{B \times L \times E}, V \in \mathbb{R}^{B \times L \times E}$, $L$ is the sequence lenght and $E$ is the embedding size.
+
+Now, we'll use an arbitraty value for the padding token $[PAD]$, to align all the $|B|$ sequences to the same lenght $L$. 
+
+As an example, the "proto-padding-mask" where $|B| = 4$ and $|L| = 6$, will be:
+
+$$ |B| \Biggl\{ \underbrace{\begin{bmatrix} x_1 & x_2 & [PAD] & [PAD] & [PAD] & [PAD] \\\
+    x_3 & x_4 & x_5 & x_6 & [PAD] & [PAD] \\\
+x_7 & x_8 & x_9 & [PAD] & [PAD] & [PAD] \\\
+x_{10} & x_{11} & x_{12} & x_{13}] & x_{14} & [PAD] 
+\end{bmatrix}}_{|L|}$$
+
+Remember that the scaled-dot-product attention function is:
+
+$$
+    Attention(Q, K, V) = softmax(\frac{QK^{T}}{\sqrt{d_k}} + M)V
+$$
+
+for the operation $QK^{T}$ the transposition for the tensor $K$ is done only on the last two dimensions (the batch dim is not considered), so 
+
+$$
+QK^{T} \in \mathbb{R}^{(B \times L \times E) \times (B \times E \times L) } = \mathbb{R}^{B \times L \times L}
+$$
+Now, for each sentence in the set of size $|B|$ we have a $L \times L$ matrix that should be masked. 
+To better understand how to construct our padding mask we can make and example with a single sentence, let's say the third row!
+
+$$Q = K = \begin{bmatrix}x_7 \\\
+x_8 \\\
+x_9 \\\
+[PAD] \\\
+[PAD] \\\ 
+[PAD] \end{bmatrix}\in \mathbb{R}^{1xLxE}$$
+Considering every element like $x_7 \in \mathbb{R}^{E}$. So,
+
+$$
+QK^{T} = \begin{bmatrix}x_7 \\\
+x_8 \\\
+x_9 \\\
+[PAD] \\\
+[PAD] \\\ 
+[PAD] \end{bmatrix} * \begin{bmatrix}x_7 & x_8 & x_9 & [PAD] & [PAD] & [PAD] \end{bmatrix} = \begin{bmatrix} x_7x_7 & x_7x_8 & x_7x_9 & x_7[PAD] & x_7[PAD] & x_7[PAD] \\\
+x_8x_7 & x_8x_8 & x_8x_9 & x_8[PAD] & x_8[PAD] & x_8[PAD] \\\
+x_9x_7 & x_9x_8 & x_9x_9 & x_9[PAD] & x_9[PAD] & x_9[PAD] \\\
+[PAD]x_7 & [PAD]x_8 & [PAD]x_9 & [PAD][PAD] & [PAD][PAD] & [PAD][PAD] \\\
+[PAD]x_7 & [PAD]x_8 & [PAD]x_9 & [PAD][PAD] & [PAD][PAD] & [PAD][PAD] \\\
+[PAD]x_7 & [PAD]x_8 & [PAD]x_9 & [PAD][PAD] & [PAD][PAD] & [PAD][PAD] 
+\end{bmatrix}
+$$
+
+It's easy to see that every position in which we have a multiplication by the padding token (actually a dot product because every entry is $ \in \mathbb{R}^{E}$) should be masked.
+
+Hence, our padding mask for the third sentence will be:
+
+$$
+    M^{P}_3 = \begin{bmatrix} 0 & 0 & 0 & -inf & -inf & -inf \\\
+0 & 0 & 0 & -inf & -inf & -inf \\\
+0 & 0 & 0 & -inf & -inf & -inf \\\
+-inf & -inf & -inf & -inf & -inf & -inf \\\
+-inf & -inf & -inf & -inf & -inf & -inf  \\\
+-inf & -inf & -inf & -inf & -inf & -inf  
+\end{bmatrix}
+$$
+
+It's easy to derive this mask with these operations:
+
+```python
+B = 1
+L = 6
+padding_mask = torch.FloatTensor([0, 0, 0, 0, -torch.inf, -torch.inf]).unsqueeze(0).unsqueeze(0)
+padding_mask = padding_mask.repeat(1, L, 1)
+i, j = torch.triu_indices(L, L)
+vals = padding_mask[:, i, j]
+padding_mask = padding_mask.transpose(-2, -1)
+padding_mask[:, i, j] = vals
+```
+but I'm pretty sure more efficient ways exists

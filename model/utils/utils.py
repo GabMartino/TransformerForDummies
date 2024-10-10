@@ -15,6 +15,7 @@ def create_random_padding_mask(batch_size, seq_len):
     for i in range(batch_size):
         padding_mask[i, padding_start_indeces[i]:] = True
 
+
     padding_mask = padding_mask.float()
     padding_mask[padding_mask == 1.] = -torch.inf
     padding_mask = padding_mask.unsqueeze(1).repeat(1, seq_len, 1)
