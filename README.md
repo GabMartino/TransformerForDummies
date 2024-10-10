@@ -84,9 +84,9 @@ that means that it only has the encoder input as complete sentence, and the deco
 hence only using the already generated words. For this reason, we need to force at the training time to learn to predict the ground-truth output sentence without looking at the next words, otherwise that's cheating!
 
 Here we report the shape of the "Don't look ahead mask" also called "Causal Mask":
-$$ M \in \mathbb{R}^{L x L}$$
-$$
-M = \begin{bmatrix} 
+$M \in \mathbb{R}^{L x L}$
+
+$$M = \begin{bmatrix} 
 0 & -inf & -inf &  -inf & -inf &  -inf  \\\
 0 & 0 & -inf & -inf & -inf & -inf \\\
 0 & 0 & 0 & -inf & -inf & -inf \\\
@@ -113,10 +113,9 @@ This is done because if we consider $Q \in \mathbb{R}^{Lx1}, K \in \mathbb{R}^{L
 We would have $QK^{T} \in \mathbb{R}^{LxL}$
 
 Now, **the softmax function is applied column wise**, this is just because the later multiplication with $V$ is on the right-hand side.
+
 Remind that:
-$$
-    Softmax(x_i) = \frac{e^{x_i}}{\sum_i e^{x_i}}
-$$
+$$Softmax(x_i) = \frac{e^{x_i}}{\sum_i e^{x_i}}$$
 Where the $x_i$ is in a set $X = \{x_1, x_2, ..., x_n\}$, this function just reweight the value to be summed to 1.
 
 Hence, when the value is $-inf$ the softmax gives a weight of $0$ that means "don't consider this value".
