@@ -64,14 +64,12 @@ and appear clear and obvious only when you start to implement things and problem
 
 ### 1) **How the masks are included in the attention computation?**
 
-### 3) **The Look-Ahead Mask is the only mask used?**
-
-### 2) **How the padding mask is used??**
+### 2) **Do other masks exist?? Why?? and how to include them as well??**
 
 ## The Masks: Answers
 
 
-### 1) **The employment of the Look-Ahead Mask hides a couple of interesting issues**
+### 1) **Here we show how to include the Look-Ahead/Causal Mask and what are the implications**
 
 
 ### The Look-Ahead/Causal Mask
@@ -227,3 +225,64 @@ $$Attention(Q, V, K) = \begin{bmatrix}
     \end{bmatrix}$$
 
 This new vector represents a weighted combination of the values of $V$, in fact the first component consider only the first value, the second component is the weighted sum of the first two component, and so on...
+
+
+### 2) **The Padding Mask exists!!**
+
+The padding mask has a trivial reason on why it exists: **not all the sentences have the same lenght!**. **BUT WAIT!**
+
+For this reason, we:
+- Add padding tokens to bring all the sentences to have the same lenght;
+- create a mask that "block" the softmax function to consider this token that are uninformative.
+
+## The Padding Mask: requires a paragraph for itself...
+### 1) What if I do not want to use multiple sentences?? That means BATCH SIZE = 1?
+
+#### ***<p style="text-align:center;">In this case we don't need a padding mask</p>***
+
+### 2) Wait? But the input encoder sentence and the input decoder sentence can have different lenghts? What about the padding then?
+
+At least in theory the two inputs can have a different lenghts. 
+
+Let's assume that we have the batch size equals to 1, the encoder output is $X \in \mathbb{R}^{L_1 \times E}$ and the input of the decoder is $ Y \in \mathbb{R}^{L_2 \times E}$ (the same dimensionality of the input of the decoder is reported till the point of the conjuction of the two, that is the "Cross-Attention"), where $L_1$ is the lenght of the sentence in the encoder, $L_2$ is the lenght of the sentence in the decoder, $E$ is the embedding size.
+
+First of all, the $E$ should be the same for the encoder and the decoder, if it is not obvious now, it will be in a second.
+
+About the two sequence lenght instead, we remind from the answer 2, that the decoder offers the query to the attention, the encoder the keys and the values instead. Hence, $ Q \in \mathbb{R}^{L_2 \times E}, K \in \mathbb{R}^{L_1 \times E}, V \in \mathbb{R}^{L_1 \times E}$
+
+$$
+    \frac{QK^{T}}{\sqrt{|E|}} = \mathbb{R}^{(L_2 \times E) \times (E \times L_1)} = \mathbb{R}^{L_2 \times L_1}
+$$
+This first explains why the embedding size should be equal for the both encoder and the decoder. 
+
+Then, after the attention computation:
+
+$$
+    softmax(\frac{QK^{T}}{\sqrt{|E|}})V = \mathbb{R}^{(L_2 \times L_1) \times (L_1 \times E)} = \mathbb{R}^{L_2 \times E}
+$$
+So,
+#### ***<p style="text-align:center;">Yes, the encoder and decoder sequences can have different lenght, in this case the output of the decoder will have the same decoder lenght. </p>***
+
+From a practical point of view, I've never seen an implementation with different lenghts, because it's easier to implement and because it mostly has no sense to do it otherwise.
+The only reason in which I could implement different lenghts encoder-decoder is when the lenghts of the sentences in the dataset are strongly different in the distribution between the source and target languages (assuming a translation task), in this case maybe I could have a speed up in the computation.
+
+### 3) Ok, but the Transformer has 3 attention blocks in which one I should insert the padding mask?
+
+Reporting the same paragraph above:
+
+<p align="center">
+<img src="./assets/paragraph_1.jpg" alt="Paragraph" width="70%"/>
+</p>
+
+The sentence "*This allows every
+position in the decoder to attend over all positions in the input sequence*" can be interpreted that since the encoder sequence is already went through a processing,
+it is possible to use all the embeddings vectors, so not padding mask in the cross attention. Furthermore, in the Self-Attention blocks for both Encoder and Decoder,
+seems natural the usage.
+
+Hence:
+- **Encoder Self-Attention block: PADDING MASK**
+- **Decoder MASKED Self-Attention block: PADDING MASK + CAUSAL MASK**
+- **Encoder-Decoder Cross-Attention block: NO PADDING**
+
+
+### 4) How is done the Padding Mask? and how is employed?
