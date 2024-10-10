@@ -228,4 +228,5 @@ $$Attention(Q, V, K) = \begin{bmatrix}
     4.9932 \\\
     5.9975
     \end{bmatrix}$$
+
 This new vector represents a weighted combination of the values of $V$, in fact the first component consider only the first value, the second component is the weighted sum of the first two component, and so on...
