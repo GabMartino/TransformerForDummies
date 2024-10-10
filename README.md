@@ -209,25 +209,23 @@ The sum "for each row" is always 1.0, try to believe!
 
 Finally, we can compute the output values of the attention mechanism:
 
-$$
-    Softmax(\frac{QK^{T}}{\sqrt{d_k}} + M)V = \begin{bmatrix} 
+$$Softmax(\frac{QK^{T}}{\sqrt{d_k}} + M)V = \begin{bmatrix} 
 1.0000e+00 & 0 & 0 & 0 & 0 &  0  \\\
 1.1920e-01 & 8.8080e-01 & 0 & 0 & 0 & 0\\\
 2.3556e-03 & 4.7314e-02 & 9.5033e-01 & 0 & 0 & 0\\\
 6.0317e-06 & 3.2932e-04 & 1.7980e-02 & 9.8168e-01 & 0 &  0 \\\
 2.0473e-09 & 3.0384e-07 & 4.5094e-05 & 6.6925e-03 & 9.9326e-01 & 0  \\\
 9.3344e-14 & 3.7658e-11 & 1.5192e-08 & 6.1290e-06 &  2.4726e-03 & 9.9752e-01
-\end{bmatrix} * \begin{bmatrix} 1 \\\ 2 \\\ 3 \\\ 4 \\\ 5 \\\ 6\end{bmatrix}
-$$
+\end{bmatrix} * \begin{bmatrix} 1 \\\ 2 \\\ 3 \\\ 4 \\\ 5 \\\ 6\end{bmatrix}$$
+
 The results is:
-$$
-    Attention(Q, V, K) = \begin{bmatrix}
+
+$$Attention(Q, V, K) = \begin{bmatrix}
     1.0\\\
     1.8808 \\\
     2.9480 \\\
     3.9813 \\\
     4.9932 \\\
     5.9975
-    \end{bmatrix}
-$$
+    \end{bmatrix}$$
 This new vector represents a weighted combination of the values of $V$, in fact the first component consider only the first value, the second component is the weighted sum of the first two component, and so on...
