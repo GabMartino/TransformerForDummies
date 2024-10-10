@@ -375,8 +375,8 @@ $$M^{P} = \[ M^{P}_1, ..., M^{P}_B \]$$
 
 ### Recap for the Masking
 
-#### - Encoder Self-Attention block: $ SelfAttentionEncoder(Q_{E}, K_{E}, V_{E}) = softmax(\frac{Q_{E}K_{E}^{T}}{\sqrt{d_k}} + M^{P})V_{E}$
-#### - Decoder MASKED Self-Attention block: : $ SelfAttentionMaskedDecoder(Q_{E}, K_{E}, V_{E}) = softmax(\frac{Q_{E}K_{E}^{T}}{\sqrt{d_k}} + M^{P} + M^{C})V_{E}$
-#### - Encoder-Decoder Cross-Attention block: $ CrossAttentionEncoder(Q_{D}, K_{E}, V_{E}) = softmax(\frac{Q_{D}K_{E}^{T}}{\sqrt{d_k}})V_{E}$
+#### - Encoder Self-Attention block: $SelfAttentionEncoder(Q_{E}, K_{E}, V_{E}) = softmax(\frac{Q_{E}K_{E}^{T}}{\sqrt{d_k}} + M^{P})V_{E}$
+#### - Decoder MASKED Self-Attention block: : $SelfAttentionMaskedDecoder(Q_{E}, K_{E}, V_{E}) = softmax(\frac{Q_{E}K_{E}^{T}}{\sqrt{d_k}} + M^{P} + M^{C})V_{E}$
+#### - Encoder-Decoder Cross-Attention block: $CrossAttentionEncoder(Q_{D}, K_{E}, V_{E}) = softmax(\frac{Q_{D}K_{E}^{T}}{\sqrt{d_k}})V_{E}$
 
 Where the pedix $E$ or $D$ in this case stand for Encoder and Decoder. $M^P$ is the Padding Mask and $M^C$ is the Causal Mask. 
