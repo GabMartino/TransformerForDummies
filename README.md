@@ -156,8 +156,7 @@ $$
 \end{bmatrix}
 $$
 
-$$
-    \frac{QK^{T}}{\sqrt{d_k}} + M = \begin{bmatrix} 
+$$\frac{QK^{T}}{\sqrt{d_k}} + M = \begin{bmatrix} 
 1 & -inf & -inf & -inf & -inf &  -inf  \\\
 2 & 4 & -inf & -inf & -inf & -inf \\\
 3 & 6 & 9 & -inf & -inf & -inf \\\
