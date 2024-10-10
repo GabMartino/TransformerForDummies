@@ -172,7 +172,7 @@ $Q = K = V \in \mathbb{R}^{L \times 1}$ for this reason after the softmax we hav
 #### 1. The softmax function is numerical unstable for -inf -> modify -inf values in a VERY HIGH NEGATIVE VALUE -1E15 for example
 #### 2. The softmax function is actually applied "for each rows"! Remember how pytorch handles the dimensions!
 
-This could be trivial for the practitioners but it's important to explicate everything (the repo it's called TransformerForDummies at the end :D)
+This could be trivial for the practitioners but it's important to explicate everything (the repo it's called **_TransformerForDummies_** after all :D)
 
 First of all, remember what the "dimensions" mean in the pytorch: dim = 0, means that you are indexing through the rows! dim = 1 means that you are indexing through the columns. 
 
