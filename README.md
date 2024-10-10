@@ -250,13 +250,13 @@ First of all, the $E$ should be the same for the encoder and the decoder, if it 
 
 About the two sequence lenght instead, we remind from the answer 2, that the decoder offers the query to the attention, the encoder the keys and the values instead. Hence, $ Q \in \mathbb{R}^{L_2 \times E}, K \in \mathbb{R}^{L_1 \times E}, V \in \mathbb{R}^{L_1 \times E}$
 
-$$\frac{QK^{T}}{\sqrt{|E|}} = \mathbb{R}^{(L_2 \times E) \times (E \times L_1)} = \mathbb{R}^{L_2 \times L_1}$$
+$$\frac{QK^{T}}{\sqrt{|E|}} \in \mathbb{R}^{(L_2 \times E) \times (E \times L_1)} = \mathbb{R}^{L_2 \times L_1}$$
 
 This first explains why the embedding size should be equal for the both encoder and the decoder. 
 
 Then, after the attention computation:
 
-$$softmax(\frac{QK^{T}}{\sqrt{|E|}})V = \mathbb{R}^{(L_2 \times L_1) \times (L_1 \times E)} = \mathbb{R}^{L_2 \times E}$$
+$$softmax(\frac{QK^{T}}{\sqrt{|E|}})V \in \mathbb{R}^{(L_2 \times L_1) \times (L_1 \times E)} = \mathbb{R}^{L_2 \times E}$$
 
 So,
 #### ***<p style="text-align:center;">Yes, the encoder and decoder sequences can have different lenght, in this case the output of the decoder will have the same decoder lenght. </p>***
