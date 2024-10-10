@@ -161,8 +161,8 @@ $$\frac{QK^{T}}{\sqrt{d_k}} + M = \begin{bmatrix}
 4 & 8 & 12 & 16 & -inf &  -inf\\\
 5 & 10 & 15 & 20 & 25 & -inf  \\\
 6 & 12 & 18 & 24 & 30 & 36 
-\end{bmatrix}
-$$
+\end{bmatrix}$$
+
 Now we need to apply the **softmax function COLUMN-WISE**. Why column-wise? because remember that we are using column vectors:
 $Q = K = V \in \mathbb{R}^{Lx1}$ for this reason after the softmax we have $softmax(\frac{QK^T}{\sqrt{d_k}}) \in \mathbb{R}^{LxL}$ that multiplied by $V \in \mathbb{R}^{Lx1}$ we have a new column vector $A \in \mathbb{R}^{Lx1}$ ($(L*L)*(L*1) = L*(L*L)*1 = L*1$)
 
