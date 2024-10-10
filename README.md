@@ -109,8 +109,8 @@ $$
 
 Notice the mask is inside the softmax function.
 
-This is done because if we consider $Q \in \mathbb{R}^{Lx1}, K \in \mathbb{R}^{Lx1}, V \in \mathbb{R}^{Lx1}$,
-We would have $QK^{T} \in \mathbb{R}^{LxL}$
+This is done because if we consider $Q \in \mathbb{R}^{L \times 1}, K \in \mathbb{R}^{L \times 1}, V \in \mathbb{R}^{L \times 1}$,
+We would have $QK^{T} \in \mathbb{R}^{L \times L}$
 
 Now, **the softmax function is applied column wise**, this is just because the later multiplication with $V$ is on the right-hand side.
 
@@ -163,8 +163,8 @@ $$\frac{QK^{T}}{\sqrt{d_k}} + M = \begin{bmatrix}
 6 & 12 & 18 & 24 & 30 & 36 
 \end{bmatrix}$$
 
-Now we need to apply the **softmax function COLUMN-WISE**. Why column-wise? because remember that we are using column vectors:
-$Q = K = V \in \mathbb{R}^{Lx1}$ for this reason after the softmax we have $softmax(\frac{QK^T}{\sqrt{d_k}}) \in \mathbb{R}^{LxL}$ that multiplied by $V \in \mathbb{R}^{Lx1}$ we have a new column vector $A \in \mathbb{R}^{Lx1}$ ($(L*L)*(L*1) = L*(L*L)*1 = L*1$)
+Now we need to apply the **softmax function ROW-WISE**. Why column-wise? because remember that we are using column vectors:
+$Q = K = V \in \mathbb{R}^{L \times 1}$ for this reason after the softmax we have $softmax(\frac{QK^T}{\sqrt{d_k}}) \in \mathbb{R}^{L \times L}$ that multiplied by $V \in \mathbb{R}^{L \times 1}$ we have a new column vector $A \in \mathbb{R}^{L \times 1}$ ( $(L \times L)\ times (L \times 1) = L \times (L \times L) \times 1 = L \times 1$ )
 
 
 ### ACHTUNG
