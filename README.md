@@ -130,8 +130,7 @@ $$Q = K = V = \begin{bmatrix}1 \\\
 6 \end{bmatrix}
 $$
 
-$$
-    QK^{T} = \begin{bmatrix} 1 \\\
+$$QK^{T} = \begin{bmatrix} 1 \\\
 2 \\\
 3 \\\
 4 \\\
@@ -143,18 +142,17 @@ $$
 4 & 8 & 12 & 16 & 20 & 24  \\\ 
 5 & 10 & 15 & 20 & 25 & 30\\\
 6 & 12 & 18 & 24 & 30 & 36 
-\end{bmatrix}
-$$
-Tha of course is simmetric. Moreover, we have that $QK^{T} = \frac{QK^{T}}{\sqrt{d_k}}$ where $d_k$ is just the dimension of the single vector that in our example is just 1.
-$$
-    \frac{QK^{T}}{\sqrt{d_k}} = \begin{bmatrix} 1 & 2 & 3 & 4 & 5 & 6 \\\ 
+\end{bmatrix}$$
+
+That of course is simmetric. Moreover, we have that $QK^{T} = \frac{QK^{T}}{\sqrt{d_k}}$ where $d_k$ is just the dimension of the single vector that in our example is just 1.
+
+$$\frac{QK^{T}}{\sqrt{d_k}} = \begin{bmatrix} 1 & 2 & 3 & 4 & 5 & 6 \\\ 
 2 & 4 & 6 & 8 & 10 & 12 \\\
 3 & 6 & 9 & 12 & 15 & 18 \\\
 4 & 8 & 12 & 16 & 20 & 24  \\\ 
 5 & 10 & 15 & 20 & 25 & 30\\\
 6 & 12 & 18 & 24 & 30 & 36 
-\end{bmatrix}
-$$
+\end{bmatrix}$$
 
 $$\frac{QK^{T}}{\sqrt{d_k}} + M = \begin{bmatrix} 
 1 & -inf & -inf & -inf & -inf &  -inf  \\\
