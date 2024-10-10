@@ -2,10 +2,11 @@
 # TransformerForDummies
 
 I found that some important details of the Transformer implementation were are not totally clear 
-and I needed to search for other implementation or to explanation of these details. For this reason, 
-I decided to report here the most important doubts that I had hoping that could some new people entering in this field!
+and I needed to search for other implementation or explanations of these details. 
 
-The explainations assume a basic knowledge of the transformer models (e.g. Encoder-Decoder architecture, Multi-Head Attention Mechanism, ...),
+For this reason, I decided to report clarifications for the most important doubts that I had, hoping that this could help some new people entering in this field!
+
+The explainations assume a basic knowledge of the transformer models (e.g. Encoder-Decoder architecture, Multi-Head Attention Mechanism, tokenization, etc.),
 avoiding to create a redundant repository over millions already present on the web, and focusing mainly on the ambiguities.
 
 ## The Architecture: Questions
@@ -36,12 +37,6 @@ Later in this markdown more on masks.
 <img src="./assets/paragraph_1.jpg" alt="Paragraph" width="70%"/>
 </p>
 
-### 2) **The Keys and the Values come from the Encoder, the Queries come from the last sublayer of the decoder.**
-
-<p align="center">
-<img src="./assets/answer_2.jpg" alt="Paragraph" width="50%"/>
-</p>
-
 ### 1) **The Encoder Output is reported to ALL the Decoder Layers**
 
 This could be extracted from the phrase: **_This allows every position in the decoder to attend over all the positions in the input sequence_**, as also reported in the image:
@@ -53,7 +48,14 @@ This could be extracted from the phrase: **_This allows every position in the de
 </p>
 Picture taken by [](https://www.truefoundry.com/blog/transformer-architecture)
 
-3) **Only the first attention block of the decoder has a mask**
+### 2) **The Keys and the Values come from the Encoder, the Queries come from the last sublayer of the decoder.**
+
+<p align="center">
+<img src="./assets/answer_2.jpg" alt="Paragraph" width="50%"/>
+</p>
+
+
+### 3) **Only the first attention block of the decoder has a mask**
 
 This is only partially true, because here we are talking about only the Look-Ahead Mask.
 
@@ -64,7 +66,7 @@ and appear clear and obvious only when you start to implement things and problem
 
 ### 1) **How the masks are included in the attention computation?**
 
-### 2) **Do other masks exist?? Why?? and how to include them as well??**
+### 2) **Do other masks exist? Why? How to include them as well?**
 
 ## The Masks: Answers
 
@@ -102,7 +104,7 @@ The matrix is composed by zeros and -inf, we'll see in a moment why:
 
 
 $$
-    Attention(Q, K, V) = softmax(\frac{QK^{T}}{\sqrt{d_k}} + M)V
+    Attention(Q, K, V) = softmax\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M\bigg)V
 $$
 
 Notice the mask is inside the softmax function.
@@ -190,7 +192,7 @@ values = torch.softmax(values, dim=-1)
 We'll have:
 
 $$
-    Softmax(\frac{QK^{T}}{\sqrt{d_k}} + M) = \begin{bmatrix} 
+    Softmax\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M\bigg) = \begin{bmatrix} 
 1.0000e+00 & 0 & 0 & 0 & 0 &  0  \\\
 1.1920e-01 & 8.8080e-01 & 0 & 0 & 0 & 0\\\
 2.3556e-03 & 4.7314e-02 & 9.5033e-01 & 0 & 0 & 0\\\
@@ -204,7 +206,7 @@ The sum "for each row" is always 1.0, try to believe!
 
 Finally, we can compute the output values of the attention mechanism:
 
-$$Softmax(\frac{QK^{T}}{\sqrt{d_k}} + M)V = \begin{bmatrix} 
+$$Softmax\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M\bigg)V = \begin{bmatrix} 
 1.0000e+00 & 0 & 0 & 0 & 0 &  0  \\\
 1.1920e-01 & 8.8080e-01 & 0 & 0 & 0 & 0\\\
 2.3556e-03 & 4.7314e-02 & 9.5033e-01 & 0 & 0 & 0\\\
@@ -235,7 +237,7 @@ For this reason, we:
 - Add padding tokens to bring all the sentences to have the same lenght;
 - create a mask that "block" the softmax function to consider this token that are uninformative.
 
-## The Padding Mask: requires a paragraph for itself...
+## The Padding Mask: requires a paragraph for itself... Q&A
 ### 1) What if I do not want to use multiple sentences?? That means BATCH SIZE = 1?
 
 ### ***<p style="text-align:center;">In this case we don't need a padding mask</p>***
@@ -244,11 +246,11 @@ For this reason, we:
 
 At least in theory the two inputs can have a different lenghts. 
 
-Let's assume that we have the batch size equals to 1, the encoder output is $X \in \mathbb{R}^{L_1 \times E}$ and the input of the decoder is $ Y \in \mathbb{R}^{L_2 \times E}$ (the same dimensionality of the input of the decoder is reported till the point of the conjuction of the two, that is the "Cross-Attention"), where $L_1$ is the lenght of the sentence in the encoder, $L_2$ is the lenght of the sentence in the decoder, $E$ is the embedding size.
+Let's assume that we have the batch size equals to 1, the encoder output is $X \in \mathbb{R}^{L_1 \times E}$ and the input of the decoder is $Y \in \mathbb{R}^{L_2 \times E}$ (the same dimensionality of the input of the decoder is reported till the point of the conjuction of the two, that is the "Cross-Attention"), where $L_1$ is the lenght of the sentence in the encoder, $L_2$ is the lenght of the sentence in the decoder, $E$ is the embedding size.
 
 First of all, the $E$ should be the same for the encoder and the decoder, if it is not obvious now, it will be in a second.
 
-About the two sequence lenght instead, we remind from the answer 2, that the decoder offers the query to the attention, the encoder the keys and the values instead. Hence, $ Q \in \mathbb{R}^{L_2 \times E}, K \in \mathbb{R}^{L_1 \times E}, V \in \mathbb{R}^{L_1 \times E}$
+About the two sequence lenght instead, we remind from the answer 2, that the decoder offers the query to the attention, the encoder the keys and the values instead. Hence, $Q \in \mathbb{R}^{L_2 \times E}, K \in \mathbb{R}^{L_1 \times E}, V \in \mathbb{R}^{L_1 \times E}$
 
 $$\frac{QK^{T}}{\sqrt{|E|}} \in \mathbb{R}^{(L_2 \times E) \times (E \times L_1)} = \mathbb{R}^{L_2 \times L_1}$$
 
@@ -259,12 +261,12 @@ Then, after the attention computation:
 $$softmax(\frac{QK^{T}}{\sqrt{|E|}})V \in \mathbb{R}^{(L_2 \times L_1) \times (L_1 \times E)} = \mathbb{R}^{L_2 \times E}$$
 
 So,
-### ***<p style="text-align:center;">Yes, the encoder and decoder sequences can have different lenght, in this case the output of the decoder will have the same decoder lenght. </p>***
+### ***<p style="text-align:center;">Yes, the encoder and decoder sequences can have different lenghts, in this case the output of the decoder will have the same decoder's sequence lenght. </p>***
 
-From a practical point of view, I've never seen an implementation with different lenghts, because it's easier to implement and because it mostly has no sense to do it otherwise.
+From a practical point of view, I've never seen an implementation with different lenghts, because it's more annoying to implement and because it mostly has no sense to do it.
 The only reason in which I could implement different lenghts encoder-decoder is when the lenghts of the sentences in the dataset are strongly different in the distribution between the source and target languages (assuming a translation task), in this case maybe I could have a speed up in the computation.
 
-### ***<p style="text-align:center;">In the case we want to the use (as often done) the same sequence lenght for both encoder and decoder, you probably we'll need a padding mask, also in the case of batch size = 1.</p>***
+### ***<p style="text-align:center;">In the case we want to the use (as often done) the same sequence lenght for both encoder and decoder, you probably will need a padding mask, also in the case of batch size = 1.</p>***
 
 
 ### 3) Ok, but the Transformer has 3 attention blocks in which one I should insert the padding mask?
@@ -277,8 +279,8 @@ Reporting the same paragraph above:
 
 The sentence "*This allows every
 position in the decoder to attend over all positions in the input sequence*" can be interpreted that since the encoder sequence is already went through a processing,
-it is possible to use all the embeddings vectors, so not padding mask in the cross attention. Furthermore, in the Self-Attention blocks for both Encoder and Decoder,
-seems natural the usage.
+it is possible to use all the embeddings vectors in the case of the Cross-Attention, so no padding mask in this case. Furthermore, in the Self-Attention blocks for both Encoder and Decoder,
+seems natural the usage instead.
 
 Hence:
 
@@ -385,6 +387,6 @@ $$SelfAttentionMaskedDecoder(Q_{E}, K_{E}, V_{E}) = softmax(\frac{Q_{E}K_{E}^{T}
 
 #### - Encoder-Decoder Cross-Attention block: 
 
-$$CrossAttentionEncoder(Q_{D}, K_{E}, V_{E}) = softmax(\frac{Q_{D}K_{E}^{T}}{\sqrt{d_k}})V_{E}$$
+$$CrossAttention(Q_{D}, K_{E}, V_{E}) = softmax(\frac{Q_{D}K_{E}^{T}}{\sqrt{d_k}})V_{E}$$
 
 Where the pedix $E$ or $D$ in this case stand for Encoder and Decoder. $M^P$ is the Padding Mask and $M^C$ is the Causal Mask. 
