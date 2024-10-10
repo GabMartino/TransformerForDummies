@@ -7,9 +7,10 @@ from PIL.ImageOps import scale
 from matplotlib import pyplot as plt
 
 from model.utils.utils import create_random_padding_mask, create_look_ahead_mask
-
+import logging
 
 def scaled_dot_attention(q, k, v, mask = None):
+    logging.debug("Q= ", q )
     scaled = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(q.size(-1))
     if mask is not None:
         batch_size, num_heads, seq_len, seq_len = scaled.shape
@@ -19,11 +20,10 @@ def scaled_dot_attention(q, k, v, mask = None):
             mask = (batch_size, seq_len, seq_len) -> (batch_size, 1, seq_len, seq_len) -> 
                     -> (batch_size, 1 * num_heads, seq_len, seq_len)
         '''
-
         mask = mask.unsqueeze(1)
         mask = mask.repeat(1, num_heads, 1, 1)
         scaled = scaled + mask
-        scaled[scaled == -torch.inf] = -1e-9 ## apply after to allow the upper sum operation to recognize the -inf
+        scaled[scaled == -torch.inf] = -1e9 ## apply after to allow the upper sum operation to recognize the -inf
 
     attention = torch.softmax(scaled, dim=-1)
     output = torch.matmul(attention, v)

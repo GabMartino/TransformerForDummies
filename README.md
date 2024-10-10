@@ -15,16 +15,16 @@ The very well known image that depict the transformer architecture hides a lot o
 </p>
 
 Some of the first questions that came up in my mind when I had a look to this picture were:
-1) **How the Encoder and Decoder are connected??**
+### 1) **How the Encoder and Decoder are connected??**
 
 The encoder and the decoder can have multiple layers (N as reported). The encoder and the decoder are connected. The output of the encoder seems to be connected to the decoder. 
 But! Which layer?? The last one, the first one?? All of them??
 
-2) **How the Encoder output is connected to the 'Multi-Head Attention of the Decoder'?**
+### 2) **How the Encoder output is connected to the 'Multi-Head Attention of the Decoder'?**
 
 Every attention block has three inputs that should be the Query, Key and Value. Which one is what??
 
-3) **Why only the first attention block of the decoder is depicted as 'Masked' and not the Self-Attention of the encoder and the 'Cross-Attention block'?**
+### 3) **Why only the first attention block of the decoder is depicted as 'Masked' and not the Self-Attention of the encoder and the 'Cross-Attention block'?**
 
 Later in this markdown more on masks.
 
@@ -36,13 +36,13 @@ Later in this markdown more on masks.
 <img src="./assets/paragraph_1.jpg" alt="Paragraph" width="70%"/>
 </p>
 
-2) **The Keys and the Values come from the Encoder, the Queries come from the last sublayer of the decoder.**
+### 2) **The Keys and the Values come from the Encoder, the Queries come from the last sublayer of the decoder.**
 
 <p align="center">
 <img src="./assets/answer_2.jpg" alt="Paragraph" width="50%"/>
 </p>
 
-1) **The Encoder Output is reported to all the Decoder Layers**
+### 1) **The Encoder Output is reported to ALL the Decoder Layers**
 
 This could be extracted from the phrase: **_This allows every position in the decoder to attend over all the positions in the input sequence_**, as also reported in the image:
 
@@ -51,7 +51,7 @@ This could be extracted from the phrase: **_This allows every position in the de
 <p align="center">
 <img src="./assets/transformer_explained.png" alt="Transformer Explained" width="50%"/>
 </p>
-[https://www.truefoundry.com/blog/transformer-architecture]
+Picture taken by [](https://www.truefoundry.com/blog/transformer-architecture)
 
 3) **Only the first attention block of the decoder has a mask**
 
@@ -62,16 +62,16 @@ This is only partially true, because here we are talking about only the Look-Ahe
 I admit that I struggled a bit to understand well how the masking is used in this model, mainly because a looot of things are given for granted,
 and appear clear and obvious only when you start to implement things and problems come up.
 
-1) **How the mask is included in the attention computation?**
+### 1) **How the masks are included in the attention computation?**
 
-3) **The Look-Ahead Mask is the only mask used?**
+### 3) **The Look-Ahead Mask is the only mask used?**
 
-2) **How the padding mask is used??**
+### 2) **How the padding mask is used??**
 
 ## The Masks: Answers
 
 
-1) **The employment of the Look-Ahead Mask hides a couple of interesting issues**
+### 1) **The employment of the Look-Ahead Mask hides a couple of interesting issues**
 
 
 ### The Look-Ahead/Causal Mask
@@ -100,14 +100,14 @@ Notice that size of the mask is $L x L$ that is the lenght of the sentence.
 
 The matrix is composed by zeros and -inf, we'll see in a moment why:
 
-**The computation of the masked attention is then**:
+### **The computation of the masked attention is then**:
 
 
 $$
     Attention(Q, K, V) = softmax(\frac{QK^{T}}{\sqrt{d_k}} + M)V
 $$
 
-Notice the mask inside the softmax function.
+Notice the mask is inside the softmax function.
 
 This is done because if we consider $Q \in \mathbb{R}^{Lx1}, K \in \mathbb{R}^{Lx1}, V \in \mathbb{R}^{Lx1}$,
 We would have $QK^{T} \in \mathbb{R}^{LxL}$
@@ -115,68 +115,119 @@ We would have $QK^{T} \in \mathbb{R}^{LxL}$
 Now, **the softmax function is applied column wise**, this is just because the later multiplication with $V$ is on the right-hand side.
 
 Remind that:
-$$Softmax(x_i) = \frac{e^{x_i}}{\sum_i e^{x_i}}$$
-Where the $x_i$ is in a set $X = \{x_1, x_2, ..., x_n\}$, this function just reweight the value to be summed to 1.
+$Softmax(x_i) = \frac{e^{x_i}}{\sum_i e^{x_i}}$
+Where the $x_i$ is in a set $X = \{x_1, x_2, ..., x_n\}$, this function just reweights the value to be summed to 1.
 
 Hence, when the value is $-inf$ the softmax gives a weight of $0$ that means "don't consider this value".
 
 As an example:
 
+$$Q = K = V = \begin{bmatrix}1 \\\
+2 \\\
+3 \\\
+4 \\\
+5 \\\
+6 \end{bmatrix}
 $$
-    \frac{QK^{T}}{\sqrt{d_k}} = \begin{bmatrix} 
-1 & 2 & 3 & 4 & 5 &  6  \\\
-7 & 8 & 9 & 10 & 11 & 12 \\\
-13 & 14 & 15 & 16 & 17 & 18 \\\
-19 & 20 & 21 & 22 & 23 &  24 \\\
-25 & 26 & 27 & 28 & 29 & 30  \\\
-31 & 32 & 33 & 34 & 35 & 36 
+
+$$
+    QK^{T} = \begin{bmatrix} 1 \\\
+2 \\\
+3 \\\
+4 \\\
+5 \\\
+6 \end{bmatrix} * \begin{bmatrix} 1 & 2 & 3 & 4 & 5 & 6 \end{bmatrix} \\
+= \begin{bmatrix} 1 & 2 & 3 & 4 & 5 & 6 \\\ 
+2 & 4 & 6 & 8 & 10 & 12 \\\
+3 & 6 & 9 & 12 & 15 & 18 \\\
+4 & 8 & 12 & 16 & 20 & 24  \\\ 
+5 & 10 & 15 & 20 & 25 & 30\\\
+6 & 12 & 18 & 24 & 30 & 36 
+\end{bmatrix}
+$$
+Tha of course is simmetric. Moreover, we have that $QK^{T} = \frac{QK^{T}}{\sqrt{d_k}}$ where $d_k$ is just the dimension of the single vector that in our example is just 1.
+$$
+    \frac{QK^{T}}{\sqrt{d_k}} = \begin{bmatrix} 1 & 2 & 3 & 4 & 5 & 6 \\\ 
+2 & 4 & 6 & 8 & 10 & 12 \\\
+3 & 6 & 9 & 12 & 15 & 18 \\\
+4 & 8 & 12 & 16 & 20 & 24  \\\ 
+5 & 10 & 15 & 20 & 25 & 30\\\
+6 & 12 & 18 & 24 & 30 & 36 
 \end{bmatrix}
 $$
 
 $$
     \frac{QK^{T}}{\sqrt{d_k}} + M = \begin{bmatrix} 
 1 & -inf & -inf & -inf & -inf &  -inf  \\\
-7 & 8 & -inf & -inf & -inf & -inf \\\
-13 & 14 & 15 & -inf & -inf & -inf \\\
-19 & 20 & 21 & 22 & -inf &  -inf\\\
-25 & 26 & 27 & 28 & 29 & -inf  \\\
-31 & 32 & 33 & 34 & 35 & 36 
+2 & 4 & -inf & -inf & -inf & -inf \\\
+3 & 6 & 9 & -inf & -inf & -inf \\\
+4 & 8 & 12 & 16 & -inf &  -inf\\\
+5 & 10 & 15 & 20 & 25 & -inf  \\\
+6 & 12 & 18 & 24 & 30 & 36 
 \end{bmatrix}
 $$
+Now we need to apply the **softmax function COLUMN-WISE**. Why column-wise? because remember that we are using column vectors:
+$Q = K = V \in \mathbb{R}^{Lx1}$ for this reason after the softmax we have $softmax(\frac{QK^T}{\sqrt{d_k}}) \in \mathbb{R}^{LxL}$ that multiplied by $V \in \mathbb{R}^{Lx1}$ we have a new column vector $A \in \mathbb{R}^{Lx1}$ ($(L*L)*(L*1) = L*(L*L)*1 = L*1$)
+
+
+### ACHTUNG
+
+#### 1. The softmax function is numerical unstable for -inf -> modify -inf values in a VERY HIGH NEGATIVE VALUE -1E15 for example
+#### 2. The softmax function is actually applied "for each rows"! Remember how pytorch handles the dimensions!
+
+This could be trivial for the practitioners but it's important to explicate everything (the repo it's called TransformerForDummies at the end :D)
+
+First of all, remember what the "dimensions" mean in the pytorch: dim = 0, means that you are indexing through the rows! dim = 1 means that you are indexing through the columns. 
+
+<p align="center">
+<img src="./assets/tensor.jpg" alt="Transformer Explained" width="70%"/>
+</p>
+Moreover, the Pytorch documentation of the softmax function reports:
+<p align="center">
+<img src="./assets/softmax.png" alt="Transformer Explained" width="70%"/>
+</p>
+That in this case means that every rows will be "collapsed" independently to compute the softmax.
+Hence, after the:
+
+```python
+values = torch.softmax(values, dim=-1)
+```
+We'll have:
 
 $$
     Softmax(\frac{QK^{T}}{\sqrt{d_k}} + M) = \begin{bmatrix} 
-9.3344e-14 & 0 & 0 & 0 & 0 &  0  \\\
-3.7658e-11 & 3.7658e-11 & 0 & 0 & 0 & 0\\\
-1.5192e-08 & 1.5192e-08 & 1.5192e-08 & 0 & 0 & 0\\\
-6.1290e-06 & 6.1290e-06 & 6.1290e-06 & 6.1290e-06 & 0 &  0 \\\
-2.4726e-03 & 2.4726e-03 & 2.4726e-03 & 2.4726e-03 & 0.0025 & 0  \\\
-9.9752e-01 & 9.9752e-01 & 9.9752e-01 & 9.9752e-01 &  0.9975 & 1.0
+1.0000e+00 & 0 & 0 & 0 & 0 &  0  \\\
+1.1920e-01 & 8.8080e-01 & 0 & 0 & 0 & 0\\\
+2.3556e-03 & 4.7314e-02 & 9.5033e-01 & 0 & 0 & 0\\\
+6.0317e-06 & 3.2932e-04 & 1.7980e-02 & 9.8168e-01 & 0 &  0 \\\
+2.0473e-09 & 3.0384e-07 & 4.5094e-05 & 6.6925e-03 & 9.9326e-01 & 0  \\\
+9.3344e-14 & 3.7658e-11 & 1.5192e-08 & 6.1290e-06 &  2.4726e-03 & 9.9752e-01
 \end{bmatrix}
 $$
 
-The sum column-wise is always 1.0, try to believe!
+The sum "for each row" is always 1.0, try to believe!
 
 Finally, we can compute the output values of the attention mechanism:
 
 $$
     Softmax(\frac{QK^{T}}{\sqrt{d_k}} + M)V = \begin{bmatrix} 
-9.3344e-14 & 0 & 0 & 0 & 0 &  0  \\\
-3.7658e-11 & 3.7658e-11 & 0 & 0 & 0 & 0\\\
-1.5192e-08 & 1.5192e-08 & 1.5192e-08 & 0 & 0 & 0\\\
-6.1290e-06 & 6.1290e-06 & 6.1290e-06 & 6.1290e-06 & 0 &  0 \\\
-2.4726e-03 & 2.4726e-03 & 2.4726e-03 & 2.4726e-03 & 0.0025 & 0  \\\
-9.9752e-01 & 9.9752e-01 & 9.9752e-01 & 9.9752e-01 &  0.9975 & 1.0
+1.0000e+00 & 0 & 0 & 0 & 0 &  0  \\\
+1.1920e-01 & 8.8080e-01 & 0 & 0 & 0 & 0\\\
+2.3556e-03 & 4.7314e-02 & 9.5033e-01 & 0 & 0 & 0\\\
+6.0317e-06 & 3.2932e-04 & 1.7980e-02 & 9.8168e-01 & 0 &  0 \\\
+2.0473e-09 & 3.0384e-07 & 4.5094e-05 & 6.6925e-03 & 9.9326e-01 & 0  \\\
+9.3344e-14 & 3.7658e-11 & 1.5192e-08 & 6.1290e-06 &  2.4726e-03 & 9.9752e-01
 \end{bmatrix} * \begin{bmatrix} 1 \\\ 2 \\\ 3 \\\ 4 \\\ 5 \\\ 6\end{bmatrix}
 $$
-The results should be:
+The results is:
 $$
-    \begin{bmatrix}
-    9.3344e-14 \\\
-    1.1297e-10 \\\
-    9.1152e-08 \\\
-    6.1290e-05 \\\
-    0.0372 \\\
-    20.9627
+    Attention(Q, V, K) = \begin{bmatrix}
+    1.0\\\
+    1.8808 \\\
+    2.9480 \\\
+    3.9813 \\\
+    4.9932 \\\
+    5.9975
     \end{bmatrix}
 $$
+This new vector represents a weighted combination of the values of $V$, in fact the first component consider only the first value, the second component is the weighted sum of the first two component, and so on...

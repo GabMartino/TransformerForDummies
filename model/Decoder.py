@@ -6,6 +6,7 @@ import torch.nn as nn
 
 from model.blocks.LayerNormalization import LayerNormalization
 from model.blocks.MultiHeadAttentionBlock import MultiHeadCrossAttentionBlock, MultiHeadSelfAttentionBlock
+from model.utils.utils import create_look_ahead_mask
 
 
 class DecoderLayer(nn.Module):
@@ -69,15 +70,27 @@ def main():
     batch_size = 10
     seq_len = 100
     embedding_size = 376
+
+
     x = torch.randn((batch_size, seq_len, embedding_size))
-
+    '''
+        Test single decoder layer
+    '''
     decoder_layer = DecoderLayer(embedding_size, num_heads=8, ff_hidden_size=2048, dropout=0.1)
-    encoder_output = torch.randn((batch_size, seq_len, embedding_size))
+    encoder_output = torch.randn((batch_size, seq_len, embedding_size)) ## Simulate encoder output
     x = decoder_layer(x, None, encoder_output)
-
+    '''
+        Test multi layer decoder 
+    '''
     decoder = Decoder(embedding_size, num_heads=8, ff_hidden_size=2048, dropout=0.1, num_layers=5)
     x = decoder(x, None, encoder_output)
-    print(x.shape)
+    '''
+        Test decoder layer with a lookahead mask
+    '''
+    causal_mask = create_look_ahead_mask(batch_size, seq_len)
+    print(causal_mask)
+    encoder_output = torch.randn((batch_size, seq_len, embedding_size))  ## Simulate encoder output
+    x = decoder_layer(x=x, decoder_mask=causal_mask, encoder_output=encoder_output)
 if __name__ == '__main__':
     main()
 

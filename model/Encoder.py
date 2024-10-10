@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from model.blocks.LayerNormalization import LayerNormalization
 from model.blocks.MultiHeadAttentionBlock import MultiHeadSelfAttentionBlock
+from model.utils.utils import create_random_padding_mask
 
 
 class EncoderLayer(nn.Module):
@@ -51,20 +52,16 @@ def main():
     embedding_size = 128
     num_heads = 8
     ff_hidden_size = 1024
-
+    '''
+        Create a random input for the Encoder
+    '''
     x = torch.randn(batch_size, seq_len, embedding_size)
     '''
         Create a random padding mask
     '''
-    padding_start_indeces = torch.randint(1, seq_len, (batch_size, 1)).squeeze()
-    padding_mask = torch.full((batch_size, seq_len), False, dtype=torch.bool)
-    for i in range(padding_start_indeces.shape[0]):
-        padding_mask[i, padding_start_indeces[i]:] = True
-
-    padding_mask = padding_mask.float()
-    padding_mask[padding_mask == 1.] = -torch.inf
+    padding_mask = create_random_padding_mask(batch_size, seq_len)
     print(padding_mask)
-    encoder = Encoder(embedding_size, num_heads, ff_hidden_size, dropout=0.1, num_encoder_layers=1)
+    encoder = Encoder(embedding_size, num_heads, ff_hidden_size, dropout=0.1, num_encoder_layers=4)
     x = encoder(x, mask = padding_mask)
     print(x.shape)
 
