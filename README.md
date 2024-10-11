@@ -389,4 +389,4 @@ $$MaskedSelfAttention(Q_{d}, K_{d}, V_{d}) = softmax(\frac{Q_{d}K_{d}^{T}}{\sqrt
 
 $$CrossAttention(Q_{d}, K_{e}, V_{e}) = softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}})V_{e}$$
 
-Where the pedix $E$ or $D$ in this case stand for Encoder and Decoder. $M^P$ is the Padding Mask and $M^C$ is the Causal Mask. 
+Where the pedix $e$ or $d$ in this case stand for Encoder and Decoder. $M^P$ is the Padding Mask, $M^C$ is the Causal Mask, $d_k$ is the embedding dimension that in our case is $E$, (in whole in example we didn't mention the different heads).
