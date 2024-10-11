@@ -26,6 +26,7 @@ decoder:
   ff_hidden_size: 512
 
 #### BOTH
+same_source_target_vocabulary: False
 embedding_size: 64
 num_heads: 8
 
@@ -41,3 +42,10 @@ max_epochs: 1
 lr: 1e-3
 batch_size: 3
 dropout: 0.1
+
+##TODO: training
+##TODO: inference
+##TODO: Debuggin training
+##TODO: COmment better
+##TODO: VOCABULARY SIZE
+##TODO: COrrect the embedding layer with the shared weights

@@ -28,6 +28,7 @@ class TransformerLightning(pl.LightningModule):
                        source_mask=source_mask,
                        target_mask=target_mask)
         loss = self.loss(x.reshape(-1, x.shape[-1]), target_batch.reshape(-1))
+        assert not torch.isnan(loss)
         self.log('train_loss', loss)
         self.training_loss_history.append(loss.cpu().detach().numpy())
         return loss
@@ -43,7 +44,7 @@ class TransformerLightning(pl.LightningModule):
                        y=target_batch,
                        source_mask=source_mask,
                        target_mask=target_mask)
-        loss = self.loss(x.reshape(-1, x.shape[-1]), target_batch.reshape(-1))
+        loss = self.loss(x.reshape(-1, x.shape[-1]).float(), target_batch.reshape(-1))
         self.log('val_loss', loss)
         self.validation_loss_history.append(loss.cpu())
         return loss

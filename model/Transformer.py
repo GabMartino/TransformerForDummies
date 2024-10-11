@@ -1,10 +1,10 @@
 import torch
 import torch.nn as nn
 from confection import Config
-
 from model.Decoder import Decoder
 from model.Encoder import Encoder
 from model.blocks.PositionalEncoding import PositionalEncoding
+from model.blocks.SharedWeightsEmbedding import SharedWeightsEmbedding
 from model.utils.utils import create_random_padding_mask, create_look_ahead_mask
 
 
@@ -14,8 +14,6 @@ class Transformer(nn.Module):
         '''
             For the encoder...
         '''
-        self.source_embedding = nn.Embedding(config.encoder.vocab_size,
-                                             config.embedding_size)
         self.encoder = Encoder(config.embedding_size,
                                config.num_heads,
                                config.encoder.ff_hidden_size, \
@@ -32,11 +30,17 @@ class Transformer(nn.Module):
                                config.decoder.ff_hidden_size, \
                                config.dropout,
                                config.decoder.num_layers)
-        self.out_linear = nn.Linear(config.embedding_size,
-                                    config.decoder.vocab_size)
         '''
             For both 
         '''
+        self.target_embedding = SharedWeightsEmbedding(config.decoder.vocab_size, config.embedding_size)
+
+        if config.same_source_target_vocabulary:
+            self.source_embedding = self.target_embedding
+        else:
+            self.source_embedding = nn.Embedding(config.encoder.vocab_size,
+                                                     config.embedding_size)
+
         self.positional_encoding = PositionalEncoding(config.embedding_size)
 
     def forward(self, x,  y, source_mask = None,target_mask = None):
@@ -63,7 +67,7 @@ class Transformer(nn.Module):
         '''
             OUTPUT
         '''
-        out = self.out_linear(out)
+        out = self.target_embedding.inverse_forward(out)
         return out
 
 

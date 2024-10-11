@@ -456,7 +456,7 @@ uff..it was hard!
 
 It's not finished yet! The paper also reports:
 
-- *In the embedding layers, we multiply those weights by $\sqrt{d_{model}}$ * 
+- *In the embedding layers, we multiply those weights by $\sqrt{d_{model}}$ .* 
 
 :weary: Wait what?? Why? :confounded: :confounded:
 
@@ -468,11 +468,11 @@ Actually my catch on this turns around a couple of thoughs:
 - From the scheme it's possible to see that we always have the layer normalization as output of both encoder and decoder
 
 Hence, my idea is that since the actual vectors that represent the tokens as inputs of both encoder and decoder "don't have variance of 1", we need to rescaled them multiplying them back by $\sqrt{d_{model}}$.
-In this way the softmax is operated using the vectors of the actual size. Still strengthening my idea, is that the scaling is done multiplying the weights! Not the whole vectors! Exactly as if we wanted to revert the layer normalization.
+In this way the softmax is operating using the vectors of the actual size. Still strengthening my idea, is that the scaling is done multiplying the weights! Not the whole vectors! Exactly as if we wanted to revert the layer normalization.
 
-Every comment on this largely accepted.
+Every comment on this is largely accepted.
 
-### The Layer normalization
+## The Layer normalization
 
 The only interesting thing that I'd like to report is that the normalization is done using the Biased Variance and not the unbiased one (strengthening even more my idea on the rescaling by $\sqrt{d_{model}}$).
 
