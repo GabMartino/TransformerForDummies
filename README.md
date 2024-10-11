@@ -477,12 +477,10 @@ Every comment on this largely accepted.
 The only interesting thing that I'd like to report is that the normalization is done using the Biased Variance and not the unbiased one (strengthening even more my idea on the rescaling by $\sqrt{d_{model}}$).
 
 We remind that:
-$$
-    \sigma_{biased} = \frac{1}{N} \sum_{i=1}^{N} (x_i - \mu)^2
-$$
-$$
-    \sigma_{unbiased} = \frac{1}{N -1} \sum_{i=1}^{N} (x_i - \mu)^2
-$$
+
+$$\sigma_{biased} = \frac{1}{N} \sum_{i=1}^{N} (x_i - \mu)^2$$
+$$\sigma_{unbiased} = \frac{1}{N -1} \sum_{i=1}^{N} (x_i - \mu)^2$$
+
 So keep an eye on this if you want to reimplement this by yourself. 
 
 ## The Training
