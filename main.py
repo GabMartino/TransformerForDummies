@@ -13,7 +13,6 @@ from model.TransformerLightning import TransformerLightning
 def get_newest_checkpoint(data_path):
     list_of_files = glob.glob(data_path + "/*")
     latest_file = max(list_of_files, key=os.path.getctime)
-    print(latest_file)
     return latest_file
 @hydra.main(version_base=None, config_path="config", config_name="config")
 def main(cfg):
@@ -27,6 +26,7 @@ def main(cfg):
 
     cfg.encoder.vocab_size = datamodule.dataset.source_vocab_size
     cfg.decoder.vocab_size = datamodule.dataset.target_vocab_size
+    print(cfg.encoder.vocab_size, cfg.decoder.vocab_size)
     model = None
     if cfg.from_checkpoint:
         model = TransformerLightning.load_from_checkpoint(get_newest_checkpoint(cfg.checkpoint_dir))

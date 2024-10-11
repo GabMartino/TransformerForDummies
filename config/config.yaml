@@ -28,7 +28,7 @@ decoder:
 #### BOTH
 same_source_target_vocabulary: False
 embedding_size: 64
-num_heads: 8
+num_heads: 1
 
 ### TRAINING CONFIG
 

@@ -474,7 +474,7 @@ Every comment on this is largely accepted.
 
 ## The Layer normalization
 
-The only interesting thing that I'd like to report is that the normalization is done using the Biased Variance and not the unbiased one (strengthening even more my idea on the rescaling by $\sqrt{d_{model}}$).
+The only interesting thing that I'd like to report is that the normalization is done using the **Biased Variance** and not the unbiased one (strengthening even more my idea on the rescaling by $\sqrt{d_{model}}$).
 
 We remind that:
 
@@ -483,4 +483,35 @@ $$\sigma_{unbiased} = \frac{1}{N -1} \sum_{i=1}^{N} (x_i - \mu)^2$$
 
 So keep an eye on this if you want to reimplement this by yourself. 
 
+## The Special Tokens
+
+Why we need to use the special tokens? Around the web and in several papers a lot of different tokens are used. 
+
+### The [START] Token
+Let's consider the inference time, so we are using our already trained model, and we want to translate a source sentence into a target sentence.
+We already have an input sequence for the encoder, but how do we start the input of the decoder?? 
+We need a starting point from which we can compute the whole sequence, that in theory should be that first word of the translation that we do not know! 
+For this reason it's enough a dummy word that we'll call [START] (or whatever). 
+
+### The [EOS] Token
+The [EOS] token (End Of Sentence) it's necessary for exactly the opposite reason of the start token. We need to stop the generation of words.
+Considering that the generation is one token at time, so practically in a for loop, we need a way to stop the generation but also allow the model to learn when to stop the generation as well.
+For this reason we need the [EOS] to be set at the end of the sentence for the decoder.
+
+### And in the Encoder?
+The encoder, exactly for the opposite reason of above, doesn't need the [START] nor the [EOS] token. However, these are often used in the encoder as well, mainly to help the model to understand when the input sequence of the encoder start and finishes,
+in this way can influence the generation or the termination of the output sequence. [HERE](https://github.com/Kyubyong/transformer/issues/64) [HERE](https://www.reddit.com/r/deeplearning/comments/ob03fn/the_input_format_for_the_encoder_in_transformer/)
+
+
+### What about the padding here?
+
+
+
 ## The Training
+
+
+
+## References
+
+- https://arxiv.org/abs/1706.03762] (https://arxiv.org/abs/1706.03762)
+- https://jalammar.github.io/illustrated-transformer/(https://jalammar.github.io/illustrated-transformer/)

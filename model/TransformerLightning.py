@@ -27,7 +27,17 @@ class TransformerLightning(pl.LightningModule):
                        y=target_batch,
                        source_mask=source_mask,
                        target_mask=target_mask)
-        loss = self.loss(x.reshape(-1, x.shape[-1]), target_batch.reshape(-1))
+        '''
+                    Shift right
+                '''
+        target_batch = torch.roll(target_batch, -1, -1)
+        target_batch = target_batch.reshape(-1)
+        '''
+           ##TODO: to explaine the -100
+        '''
+        ##target_batch[target_batch == ] = -100
+
+        loss = self.loss(x.reshape(-1, x.shape[-1]), target_batch)
         assert not torch.isnan(loss)
         self.log('train_loss', loss)
         self.training_loss_history.append(loss.cpu().detach().numpy())
@@ -40,11 +50,19 @@ class TransformerLightning(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         source_batch, source_mask, target_batch, target_mask = batch
+        print(source_batch.shape, target_batch.shape)
         x = self.model(x=source_batch,
                        y=target_batch,
                        source_mask=source_mask,
                        target_mask=target_mask)
-        loss = self.loss(x.reshape(-1, x.shape[-1]).float(), target_batch.reshape(-1))
+        target_batch = torch.roll(target_batch, -1, -1)
+        target_batch = target_batch.reshape(-1)
+        print(target_batch.shape)
+        '''
+            ##TODO: to explaine the -100
+        '''
+        ##target_batch[target_batch == ] = -100
+        loss = self.loss(x.reshape(-1, x.shape[-1]).float(), target_batch)
         self.log('val_loss', loss)
         self.validation_loss_history.append(loss.cpu())
         return loss
@@ -59,7 +77,10 @@ class TransformerLightning(pl.LightningModule):
 
 
 def main():
-    pass
+    batch_size = cfg.batch_size
+    seq_len = 150
+    lightning_model = TransformerLightning(cfg)
+    x = torch.randint(0, vocab_size, (batch_size, seq_len))
 
 if __name__ == '__main__':
     main()

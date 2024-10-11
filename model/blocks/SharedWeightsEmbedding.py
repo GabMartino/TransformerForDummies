@@ -9,8 +9,9 @@ from torch.onnx.symbolic_opset11 import chunk
 
 
 class SharedWeightsEmbedding(nn.Module):
-    def __init__(self, vocab_size, embedding_size, trainable=True):
+    def __init__(self, vocab_size, embedding_size):
         super().__init__()
+        self.embeddings_size = embedding_size
         self.linear = nn.Embedding(vocab_size, embedding_size)
         self.linear_out = nn.Linear(embedding_size, vocab_size, bias=False)
         self.linear_out.weight = self.linear.weight
@@ -20,7 +21,8 @@ class SharedWeightsEmbedding(nn.Module):
         return self.linear(x)
 
     def inverse_forward(self, x):
-        return self.linear_out(x)
+        x = self.linear_out(x) * torch.tensor(self.embeddings_size, requires_grad=False).sqrt()
+        return x
 
 
 def main():
