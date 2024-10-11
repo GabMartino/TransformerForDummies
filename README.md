@@ -448,17 +448,31 @@ Hence, my recap is:
 
 This is actually a design choice also to reduce the computation.
 
-#### 2. Encoder Embedding Layer and Decoder Embedding Layer can share the weights in case the source and the target languages are the same.
+#### 2. Encoder Embedding Layer and Decoder Embedding Layer can share the weights in the case the source and the target languages are the same.
 
-So, in this case all of the three layer share the same weights as reported in the article.
+So, in this case all the three layer share the same weights as reported in the article.
 
 uff..it was hard!
 
-It's not finished yet!
+It's not finished yet! The paper also reports:
 
-- *In the embedding layers, we multiply those weights by $\sqrt{d_{model}}$*
+- *In the embedding layers, we multiply those weights by $\sqrt{d_{model}}$ * 
 
-:weary: Wait what?? Why? In which embedding layers?? All of them?? only the linear layer in output, because maybe is another typing error? :confounded: :confounded:
+:weary: Wait what?? Why? :confounded: :confounded:
 
-I had to investigate more.
+The answer is that there is no answer! As also reported in 
+- [HERE](https://datascience.stackexchange.com/questions/87906/transformer-model-why-are-word-embeddings-scaled-before-adding-positional-encod "Answer 1") 
+- [HERE](https://github.com/espnet/espnet/issues/2797 "Answer 2")  
+- [HERE](https://github.com/wenet-e2e/wenet/issues/45 "Answer 3")  
+- [HERE](https://github.com/OpenNMT/OpenNMT-py/issues/1722 "Answer 4")    
+
+Actually my catch on this is around a couple of thoughs
+- Inside the attention blocks all the dot-product are scaled by $\sqrt{d_{model}}$ that is the standard deviation of a dot-product between two independent random vector, though scaling in such a way everything has a variance of 1.
+- The layer normalization largely used is done exactly to keep every vector to variance of 1
+- From the scheme it's possible to see that we always have the layer normalization as output of both encoder and decoder
+
+Hence, my idea is that since the actual vectors that represent the tokens as inputs of both encoder and decoder "don't have variance of 1", we need to rescaled them multiplying them back by $\sqrt{d_{model}}$.
+In this way the softmax is operated using the vectors of the actual size. Still streghtening my idea, is that the scaling is done multiplying the weights! Not the whole vectors! Exactly as if we wanted to revert the layer normalization.
+
+Every comment on this largely accepted.
 
