@@ -390,3 +390,20 @@ $$MaskedSelfAttention(Q_{d}, K_{d}, V_{d}) = softmax(\frac{Q_{d}K_{d}^{T}}{\sqrt
 $$CrossAttention(Q_{d}, K_{e}, V_{e}) = softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}})V_{e}$$
 
 Where the pedix $e$ or $d$ in this case stand for Encoder and Decoder. $M^P$ is the Padding Mask, $M^C$ is the Causal Mask, $d_k$ is the embedding dimension that in our case is $E$, (in whole in example we didn't mention the different heads).
+
+## The Embeddings
+
+### 1) How the embeddings layers are implemented?
+
+The embeddings layer are used to map each token into a vector. 
+
+To allow this it's easy to just use the *torch.nn.Embedding(num_embeddings, embedding_dim, ...)* class. Internally the class is just a linear layer that maps an integer into a vector. Still more under the hood, each integer is considered in one-hot-encoding.
+
+Hence, the parameters will be:
+- num_embeddings = VOCABULARY SIZE
+- embedding_dim = EMBEDDING SIZE
+
+Unfortunately for this reason, the embedding layer is one of the storage heavy part of the model. Let's make an example:
+VOCABULARY SIZE = 50k and EMBEDDING SIZE = 512, we'll have a linear layer of $512 \times 50'000 = 25,6*10^6$ parameters, that are more than 25,6 millions of parameters. 
+
+Moreover, considering that we have two different embeddings layers ( one for the encoder and one for the decoder), we have more than 50 millions parameters just for the first step of the processing.
