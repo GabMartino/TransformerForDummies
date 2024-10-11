@@ -278,15 +278,15 @@ Reporting the same paragraph above:
 </p>
 
 The sentence "*This allows every
-position in the decoder to attend over all positions in the input sequence*" can be interpreted that since the encoder sequence is already went through a processing,
+position in the decoder to attend over all positions in the input sequence*" can be interpreted that since the encoder sequence has already gone through a processing,
 it is possible to use all the embeddings vectors in the case of the Cross-Attention, so no padding mask in this case. Furthermore, in the Self-Attention blocks for both Encoder and Decoder,
 seems natural the usage instead.
 
-Hence:
+Finally a small recap:
 
-#### - **Encoder Self-Attention block: PADDING MASK**
-#### - **Decoder MASKED Self-Attention block: PADDING MASK + CAUSAL MASK**
-#### - **Encoder-Decoder Cross-Attention block: NO PADDING**
+#### - **Encoder Self-Attention block wants: PADDING MASK**
+#### - **Decoder MASKED Self-Attention block wants: PADDING MASK + CAUSAL MASK**
+#### - **Encoder-Decoder Cross-Attention block wants: NO PADDING**
 
 <p align="center">
 <img src="./assets/Transformer_architecture_modified.jpg" alt="Transformer Architecture with masks annotated" width="50%"/>
@@ -306,7 +306,7 @@ x_7 & x_8 & x_9 & [PAD] & [PAD] & [PAD] \\\
 x_{10} & x_{11} & x_{12} & x_{13}] & x_{14} & [PAD] 
 \end{bmatrix}}_{|L|}$$
 
-Remember that the scaled-dot-product attention function is:
+Remember that the scaled-dot-product attention function with a generic mask is:
 
 $$
     Attention(Q, K, V) = softmax(\frac{QK^{T}}{\sqrt{d_k}} + M)V
@@ -343,7 +343,7 @@ x_9x_7 & x_9x_8 & x_9x_9 & x_9[PAD] & x_9[PAD] & x_9[PAD] \\\
 \end{bmatrix}
 $$
 
-It's easy to see that every position in which we have a multiplication by the padding token (actually a dot product because every entry is $ \in \mathbb{R}^{E}$) should be masked.
+It's easy to see that every position in which we have a multiplication by the padding token (actually a dot product because every entry is $\in \mathbb{R}^{E}$) should be masked.
 
 Hence, our padding mask for the third sentence will be:
 
@@ -377,16 +377,16 @@ $$M^{P} = \[ M^{P}_1, ..., M^{P}_B \]$$
 
 ### Recap for the Masking
 
-#### - Encoder Self-Attention block: 
+#### - Self-Attention Encoder block: 
 
-$$SelfAttentionEncoder(Q_{E}, K_{E}, V_{E}) = softmax(\frac{Q_{E}K_{E}^{T}}{\sqrt{d_k}} + M^{P})V_{E}$$
+$$SelfAttention(Q_{e}, K_{e}, V_{e}) = softmax(\frac{Q_{e}K_{e}^{T}}{\sqrt{d_k}} + M_e^{P})V_{e}$$
 
 #### - Decoder MASKED Self-Attention block: : 
 
-$$SelfAttentionMaskedDecoder(Q_{E}, K_{E}, V_{E}) = softmax(\frac{Q_{E}K_{E}^{T}}{\sqrt{d_k}} + M^{P} + M^{C})V_{E}$$
+$$MaskedSelfAttention(Q_{d}, K_{d}, V_{d}) = softmax(\frac{Q_{d}K_{d}^{T}}{\sqrt{d_k}} + M_d^{P} + M^{C})V_{d}$$
 
 #### - Encoder-Decoder Cross-Attention block: 
 
-$$CrossAttention(Q_{D}, K_{E}, V_{E}) = softmax(\frac{Q_{D}K_{E}^{T}}{\sqrt{d_k}})V_{E}$$
+$$CrossAttention(Q_{d}, K_{e}, V_{e}) = softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}})V_{e}$$
 
 Where the pedix $E$ or $D$ in this case stand for Encoder and Decoder. $M^P$ is the Padding Mask and $M^C$ is the Causal Mask. 
