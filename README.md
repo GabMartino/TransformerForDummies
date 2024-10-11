@@ -424,13 +424,17 @@ First of all,
 our model, we share the same weight matrix between the two embedding layers and the pre-softmax
 linear transformation, similar to [ 30 ].*
 
-So here is written that the output linear layer before the softmax is just the inverted weight matrix of the embedding layer of the decoder.
-Morever, I believe there's an error because it says *we share the same weight matrix between the **TWO** embedding layers and the pre-softmax
-linear transformation*
+So here is written that the output linear layer before the softmax is just the inverted weight matrix of the embedding layer of the decoder and the encoder as well!!
+Why the embeddings that map the German language should share the same weights that map Italian??
 
-And it has no sense for me if it considers also the encoder's embedding layer, for obvious reasons.
+Moreover!! This means that the Vocabulary size of the SINGLE SHARED embedding layer should be: VOCAB_SIZE = German_VOCAB_SIZE + Italian_VOCAB_SIZE (I'm using as an example German as source language and Italian as target language in a translation task)  :angry:
+And yet!! The output of the decoder should map the next word into a German_VOCAB_SIZE + Italian_VOCAB_SIZE one-hot vector even though the only language possible is Italian, because is the target language!!! :angry: :angry:
+Still more non-sense!!
 
 Secondly
 - *In the embedding layers, we multiply those weights by $\sqrt{d_{model}}$*
 
 :weary: Wait what?? Why? In which embedding layers?? All of them?? only the linear layer in output, because maybe is another typing error? :confounded: :confounded:
+
+I had to investigate more.
+
