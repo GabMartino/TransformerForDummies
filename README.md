@@ -460,19 +460,29 @@ It's not finished yet! The paper also reports:
 
 :weary: Wait what?? Why? :confounded: :confounded:
 
-The answer is that there is no answer! As also reported in 
-- [HERE](https://datascience.stackexchange.com/questions/87906/transformer-model-why-are-word-embeddings-scaled-before-adding-positional-encod "Answer 1") 
-- [HERE](https://github.com/espnet/espnet/issues/2797 "Answer 2")  
-- [HERE](https://github.com/wenet-e2e/wenet/issues/45 "Answer 3")  
-- [HERE](https://github.com/OpenNMT/OpenNMT-py/issues/1722 "Answer 4")    
+The answer is that there is no answer! As also reported in [HERE](https://datascience.stackexchange.com/questions/87906/transformer-model-why-are-word-embeddings-scaled-before-adding-positional-encod "Answer 1") [HERE](https://github.com/espnet/espnet/issues/2797 "Answer 2") [HERE](https://github.com/wenet-e2e/wenet/issues/45 "Answer 3") [HERE](https://github.com/OpenNMT/OpenNMT-py/issues/1722 "Answer 4")    
 
-Actually my catch on this is around a couple of thoughs
+Actually my catch on this turns around a couple of thoughs:
 - Inside the attention blocks all the dot-product are scaled by $\sqrt{d_{model}}$ that is the standard deviation of a dot-product between two independent random vector, though scaling in such a way everything has a variance of 1.
 - The layer normalization largely used is done exactly to keep every vector to variance of 1
 - From the scheme it's possible to see that we always have the layer normalization as output of both encoder and decoder
 
 Hence, my idea is that since the actual vectors that represent the tokens as inputs of both encoder and decoder "don't have variance of 1", we need to rescaled them multiplying them back by $\sqrt{d_{model}}$.
-In this way the softmax is operated using the vectors of the actual size. Still streghtening my idea, is that the scaling is done multiplying the weights! Not the whole vectors! Exactly as if we wanted to revert the layer normalization.
+In this way the softmax is operated using the vectors of the actual size. Still strengthening my idea, is that the scaling is done multiplying the weights! Not the whole vectors! Exactly as if we wanted to revert the layer normalization.
 
 Every comment on this largely accepted.
 
+### The Layer normalization
+
+The only interesting thing that I'd like to report is that the normalization is done using the Biased Variance and not the unbiased one (strengthening even more my idea on the rescaling by $\sqrt{d_{model}}$).
+
+We remind that:
+$$
+    \sigma_{biased} = \frac{1}{N} \sum_{i=1}^{N} (x_i - \mu)^2
+$$
+$$
+    \sigma_{unbiased} = \frac{1}{N -1} \sum_{i=1}^{N} (x_i - \mu)^2
+$$
+So keep an eye on this if you want to reimplement this by yourself. 
+
+## The Training
