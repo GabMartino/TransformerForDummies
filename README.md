@@ -9,70 +9,65 @@ For this reason, I decided to report clarifications for the most important doubt
 The explainations assume a basic knowledge of the transformer models (e.g. Encoder-Decoder architecture, Multi-Head Attention Mechanism, tokenization, etc.),
 avoiding to create a redundant repository over millions already present on the web, and focusing mainly on the ambiguities.
 
-## The Architecture: Questions
+This Repo offers:
+
+#### 1. A Readme with all the revealed ambiguities that I found
+#### 2. A complete, clear and commented implementation of the Transformer model in Pytorch and Pytorch Lightning
+
+## The Architecture 
 The very well known image that depict the transformer architecture hides a lot of important information that are useful for the correct implementation.
 <p align="center">
 <img src="./assets/Transformer_architecture.png" alt="Transformer" width="50%"/>
 </p>
 
 Some of the first questions that came up in my mind when I had a look to this picture were:
-### 1) **How the Encoder and Decoder are connected??**
+### 1) **How the Encoder and Decoder are connected?**
 
 The encoder and the decoder can have multiple layers (N as reported). The encoder and the decoder are connected. The output of the encoder seems to be connected to the decoder. 
 But! Which layer?? The last one, the first one?? All of them??
 
-### 2) **How the Encoder output is connected to the 'Multi-Head Attention of the Decoder'?**
-
-Every attention block has three inputs that should be the Query, Key and Value. Which one is what??
-
-### 3) **Why only the first attention block of the decoder is depicted as 'Masked' and not the Self-Attention of the encoder and the 'Cross-Attention block'?**
-
-Later in this markdown more on masks.
-
-## The architecture: Answers
-
-**The answer to these questions resides in a couple of sentence in the paper**:
-
-<p align="center">
-<img src="./assets/paragraph_1.jpg" alt="Paragraph" width="70%"/>
-</p>
-
-### 1) **The Encoder Output is reported to ALL the Decoder Layers**
-
-This could be extracted from the phrase: **_This allows every position in the decoder to attend over all the positions in the input sequence_**, as also reported in the image:
-
-
+### <center>**The Encoder Output is reported to ALL the Decoder Layers**</center>
+as reported in:
 
 <p align="center">
 <img src="./assets/transformer_explained.png" alt="Transformer Explained" width="50%"/>
 </p>
-Picture taken by [](https://www.truefoundry.com/blog/transformer-architecture)
 
-### 2) **The Keys and the Values come from the Encoder, the Queries come from the last sublayer of the decoder.**
+Picture taken by (https://www.truefoundry.com/blog/transformer-architecture)
+
+### 2) **How the Encoder's output is connected to the 'Multi-Head Attention of the Decoder'?**
+Every attention block has three inputs that should be the Query, Key and Value. Which one is what??
+
+###  <center>**The Keys and the Values come from the Encoder, the Queries come from the last sublayer of the decoder.**</center>
 
 <p align="center">
 <img src="./assets/answer_2.jpg" alt="Paragraph" width="50%"/>
 </p>
 
+Both the above answer could be extracted with a bit of interpretation from:
+<p align="center">
+<img src="./assets/paragraph_1.jpg" alt="Paragraph" width="70%"/>
+</p>
+Notice the phrase: 
 
-### 3) **Only the first attention block of the decoder has a mask**
+*This allows every position in the decoder to attend over all the positions in the input sequence*
 
-This is only partially true, because here we are talking about only the Look-Ahead Mask.
 
-## The Masks: Questions
+### 3) **What's the difference among the three different attention blocks?**
+
+In the rest of the README we'll call 
+- Self-Attention block of the encoder: the attention block of the encoder (of course :) )
+- Masked-Self-Attention of block of the decoder: you got it!
+- Cross-Attention block: the block where encoder is connected to the decoder.
+
+Later a more detailed answer!
+
+## The Masks
 
 I admit that I struggled a bit to understand well how the masking is used in this model, mainly because a looot of things are given for granted,
 and appear clear and obvious only when you start to implement things and problems come up.
 
-### 1) **How the masks are included in the attention computation?**
-
-### 2) **Do other masks exist? Why? How to include them as well?**
-
-## The Masks: Answers
-
-
-### 1) **Here we show how to include the Look-Ahead/Causal Mask and what are the implications**
-
+### 1) **How the mask is included in the Self-Attention block of the decoder?**
 
 ### The Look-Ahead/Causal Mask
 
@@ -84,9 +79,9 @@ that means that it only has the encoder input as complete sentence, and the deco
 hence only using the already generated words. For this reason, we need to force at the training time to learn to predict the ground-truth output sentence without looking at the next words, otherwise that's cheating!
 
 Here we report the shape of the "Don't look ahead mask" also called "Causal Mask":
-$M \in \mathbb{R}^{L x L}$
+$M^C \in \mathbb{R}^{L x L}$
 
-$$M = \begin{bmatrix} 
+$$M^C = \begin{bmatrix} 
 0 & -inf & -inf &  -inf & -inf &  -inf  \\\
 0 & 0 & -inf & -inf & -inf & -inf \\\
 0 & 0 & 0 & -inf & -inf & -inf \\\
@@ -96,9 +91,9 @@ $$M = \begin{bmatrix}
 \end{bmatrix}
 $$
 
-Notice that size of the mask is $L x L$ that is the lenght of the sentence. 
+Notice that size of the mask is $L \times L$ that is the lenght of the sentence. 
 
-The matrix is composed by zeros and -inf, we'll see in a moment why:
+The matrix is composed by zeros and $-inf$, we'll see in a moment why:
 
 ### **The computation of the masked attention is then**:
 
@@ -112,22 +107,22 @@ Notice the mask is inside the softmax function.
 This is done because if we consider $Q \in \mathbb{R}^{L \times 1}, K \in \mathbb{R}^{L \times 1}, V \in \mathbb{R}^{L \times 1}$,
 We would have $QK^{T} \in \mathbb{R}^{L \times L}$
 
-Now, **the softmax function is applied column wise**, this is just because the later multiplication with $V$ is on the right-hand side.
+Now, **the softmax function is applied row-wise**, this is just because the later multiplication with $V$ is on the right-hand side.
 
 Remind that:
-$Softmax(x_i) = \frac{e^{x_i}}{\sum_i e^{x_i}}$
+$softmax(x_i) = \frac{e^{x_i}}{\sum_i e^{x_i}}$
 Where the $x_i$ is in a set $X = \{x_1, x_2, ..., x_n\}$, this function just reweights the value to be summed to 1.
 
 Hence, when the value is $-inf$ the softmax gives a weight of $0$ that means "don't consider this value".
 
-As an example:
+With an example everything is always clearer!
 
 $$Q = K = V = \begin{bmatrix}1 \\\
 2 \\\
 3 \\\
 4 \\\
 5 \\\
-6 \end{bmatrix}
+6 \end{bmatrix} \in \mathbb{R}^{L \times 1}, L = 6
 $$
 
 $$QK^{T} = \begin{bmatrix} 1 \\\
@@ -154,7 +149,7 @@ $$\frac{QK^{T}}{\sqrt{d_k}} = \begin{bmatrix} 1 & 2 & 3 & 4 & 5 & 6 \\\
 6 & 12 & 18 & 24 & 30 & 36 
 \end{bmatrix}$$
 
-$$\frac{QK^{T}}{\sqrt{d_k}} + M = \begin{bmatrix} 
+$$\frac{QK^{T}}{\sqrt{d_k}} + M^C = \begin{bmatrix} 
 1 & -inf & -inf & -inf & -inf &  -inf  \\\
 2 & 4 & -inf & -inf & -inf & -inf \\\
 3 & 6 & 9 & -inf & -inf & -inf \\\
@@ -163,14 +158,14 @@ $$\frac{QK^{T}}{\sqrt{d_k}} + M = \begin{bmatrix}
 6 & 12 & 18 & 24 & 30 & 36 
 \end{bmatrix}$$
 
-Now we need to apply the **softmax function ROW-WISE**. Why column-wise? because remember that we are using column vectors:
+Now we need to apply the **softmax function ROW-WISE**. Why row-wise? because remember that we are using column vectors:
 $Q = K = V \in \mathbb{R}^{L \times 1}$ for this reason after the softmax we have $softmax(\frac{QK^T}{\sqrt{d_k}}) \in \mathbb{R}^{L \times L}$ that multiplied by $V \in \mathbb{R}^{L \times 1}$ we have a new column vector $A \in \mathbb{R}^{L \times 1}$ ( $(L \times L)\ times (L \times 1) = L \times (L \times L) \times 1 = L \times 1$ )
 
 
 ### ACHTUNG
 
-#### 1. The softmax function is numerical unstable for -inf -> modify -inf values in a VERY HIGH NEGATIVE VALUE -1E15 for example
-#### 2. The softmax function is actually applied "for each rows"! Remember how pytorch handles the dimensions!
+#### 1. The softmax function is numerical unstable for $-inf$. For this reason, we need to modify $-inf$ values in a VERY HIGH NEGATIVE VALUE like -1E15;
+#### 2. The softmax function is applied "for each rows"! But remember how Pytorch handles the dimensions!
 
 This could be trivial for the practitioners but it's important to explicate everything (the repo it's called **_TransformerForDummies_** after all :D)
 
@@ -179,20 +174,24 @@ First of all, remember what the "dimensions" mean in the pytorch: dim = 0, means
 <p align="center">
 <img src="./assets/tensor.jpg" alt="Transformer Explained" width="70%"/>
 </p>
-Moreover, the Pytorch documentation of the softmax function reports:
+
+However, the Pytorch documentation of the softmax function reports:
 <p align="center">
-<img src="./assets/softmax.png" alt="Transformer Explained" width="70%"/>
+<img src="./assets/softmax.png" alt="Transformer Explained" width="90%"/>
 </p>
+
 That in this case means that every rows will be "collapsed" independently to compute the softmax.
 Hence, after the:
 
 ```python
 values = torch.softmax(values, dim=-1)
 ```
+Using the last dimension! That in our case will be all the single rows!
+
 We'll have:
 
 $$
-    Softmax\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M\bigg) = \begin{bmatrix} 
+    Softmax\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M^C\bigg) = \begin{bmatrix} 
 1.0000e+00 & 0 & 0 & 0 & 0 &  0  \\\
 1.1920e-01 & 8.8080e-01 & 0 & 0 & 0 & 0\\\
 2.3556e-03 & 4.7314e-02 & 9.5033e-01 & 0 & 0 & 0\\\
@@ -206,7 +205,7 @@ The sum "for each row" is always 1.0, try to believe!
 
 Finally, we can compute the output values of the attention mechanism:
 
-$$Softmax\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M\bigg)V = \begin{bmatrix} 
+$$Softmax\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M^C\bigg)V = \begin{bmatrix} 
 1.0000e+00 & 0 & 0 & 0 & 0 &  0  \\\
 1.1920e-01 & 8.8080e-01 & 0 & 0 & 0 & 0\\\
 2.3556e-03 & 4.7314e-02 & 9.5033e-01 & 0 & 0 & 0\\\
@@ -226,16 +225,16 @@ $$Attention(Q, V, K) = \begin{bmatrix}
     5.9975
     \end{bmatrix}$$
 
-This new vector represents a weighted combination of the values of $V$, in fact the first component consider only the first value, the second component is the weighted sum of the first two component, and so on...
+This new vector represents a weighted combination of the values of $V$, in fact the first component consider only the first value, the second component is the weighted sum of the first two components, and so on...
 
 
-### 2) **The Padding Mask exists!!**
+### The Padding Mask
 
-The padding mask has a trivial reason on why it exists: **not all the sentences have the same lenght!**. **BUT WAIT!**
+The padding mask has a trivial reason on why it exists: **not all the sentences have the same lenght!** **BUT WAIT!**
 
 For this reason, we:
-- Add padding tokens to bring all the sentences to have the same lenght;
-- create a mask that "block" the softmax function to consider this token that are uninformative.
+- **Add padding tokens to bring all the sentences to have the same lenght;**
+- **Create a mask that "block" the softmax function to consider this token that are uninformative.**
 
 ## The Padding Mask: requires a paragraph for itself... Q&A
 ### 1) What if I do not want to use multiple sentences?? That means BATCH SIZE = 1?
