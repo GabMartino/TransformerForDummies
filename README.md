@@ -407,3 +407,30 @@ Unfortunately for this reason, the embedding layer is one of the storage heavy p
 VOCABULARY SIZE = 50k and EMBEDDING SIZE = 512, we'll have a linear layer of $512 \times 50'000 = 25,6*10^6$ parameters, that are more than 25,6 millions of parameters. 
 
 Moreover, considering that we have two different embeddings layers ( one for the encoder and one for the decoder), we have more than 50 millions parameters just for the first step of the processing.
+Remind that this layer is trainable.
+## The last layer of the Decoder
+
+Even if this part is almost straightforward, in the paper is the most ambiguous one. 
+
+It's intuitive that we just need a linear layer and a softmax to have a "vocabulary-sized" vector of probabilities to sample the most probable next word.
+However, let's read:
+
+<p align="center">
+<img src="./assets/Embeddings.png" alt="Paragraph" width="70%"/>
+</p>
+
+First of all,
+- *We also use the usual learned linear transformation and softmax function to convert the decoder output to predicted next-token probabilities. In
+our model, we share the same weight matrix between the two embedding layers and the pre-softmax
+linear transformation, similar to [ 30 ].*
+
+So here is written that the output linear layer before the softmax is just the inverted weight matrix of the embedding layer of the decoder.
+Morever, I believe there's an error because it says *we share the same weight matrix between the **TWO** embedding layers and the pre-softmax
+linear transformation*
+
+And it has no sense for me if it considers also the encoder's embedding layer, for obvious reasons.
+
+Secondly
+- *In the embedding layers, we multiply those weights by $\sqrt{d_{model}}$*
+
+:weary: Wait what?? Why? In which embedding layers?? All of them?? only the linear layer in output, because maybe is another typing error? :confounded: :confounded:
