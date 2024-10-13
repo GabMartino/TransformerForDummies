@@ -36,92 +36,6 @@ def from_padding_vector_to_matrix(padding_vector):
     padding_mask = padding_mask.transpose(-2, -1)
     padding_mask[i, j] = vals
     return padding_mask
-'''
-    Notice:
-    All the datasets are charged in memory
-'''
-class TextTranslationDatasetInMemory(torch.utils.data.Dataset):
-    def __init__(self, source_data_path, source_language, target_data_path, target_language, max_dataset_lenght=100000):
-        super(TextTranslationDatasetInMemory, self).__init__()
-        self.source_data_path = source_data_path
-        self.source_language = source_language
-        self.target_data_path = target_data_path
-        self.target_language = target_language
-        print("Loading data...")
-        self.source_raw_data = load_dataset(self.source_data_path, max_dataset_lenght)
-        self.target_raw_data = load_dataset(self.target_data_path, max_dataset_lenght)
-
-        self.supported_languages = {
-            "English": spacy.load("en_core_web_md"),
-            "Italian": spacy.load("it_core_news_md"),
-        }
-        if source_language not in ["English", "Italian"] and target_language not in ["English", "Italian"]:
-            raise NotImplementedError("Only English and Italian are supported for translation")
-        ############### TOKENIZATION
-        self.source_tokenizer = self.supported_languages[source_language].tokenizer
-
-        self.target_tokenizer = self.supported_languages[target_language].tokenizer
-
-        print("Source Language Tokenization...\n")
-        self.source_tokenized_data = [[ t.idx for t in self.source_tokenizer(s)] for s in tqdm(self.source_raw_data)]
-        self.source_max_sentence_lenght = max([len(s) for s in self.source_tokenized_data]) + 2 ## In the maximum case we always add start and end token
-
-
-        print("Target Language Tokenization...\n")
-        self.target_tokenized_data = [[ t.idx for t in self.target_tokenizer(s)] for s in tqdm(self.target_raw_data)]
-        self.target_max_sentence_lenght = max([len(s) for s in self.target_tokenized_data]) + 2 ## In the maximum case we always add start and end token
-
-        self.source_vocab_size = self.source_tokenizer.vocab.vectors.n_keys + 3 ## the START, END and PAD token
-        self.target_vocab_size = self.target_tokenizer.vocab.vectors.n_keys + 3
-        self.source_special_characters = {
-            "<START>": self.source_vocab_size - 3,
-            "<END>": self.source_vocab_size - 2,
-            "<PAD>": self.source_vocab_size -1
-        }
-        self.target_special_characters = {
-            "<START>": self.target_vocab_size - 3,
-            "<END>": self.target_vocab_size - 2,
-            "<PAD>": self.target_vocab_size - 1
-        }
-        self.max_len = max([self.source_max_sentence_lenght, self.target_max_sentence_lenght])
-
-    def __len__(self):
-        return len(self.source_raw_data)
-
-    def prepare_source_sentence(self, index):
-        source_sentence = self.source_tokenized_data[index]
-        source_sentence.insert(0, self.source_special_characters['<START>'])
-        source_sentence.append(self.source_special_characters['<END>'])
-        source_padding = [self.source_special_characters['<PAD>']] * (self.max_len - len(source_sentence))
-        source_sentence += source_padding
-        source_padding_vector = torch.full((len(source_sentence),), 0.0)
-        source_padding_vector[-len(source_padding):] = -torch.inf
-        source_padding_mask = from_padding_vector_to_matrix(source_padding_vector)
-        return source_sentence, source_padding_mask
-
-    def prepare_target_sentence(self, index):
-        target_sentence = self.target_tokenized_data[index]
-        target_sentence.insert(0, self.target_special_characters['<START>'])
-        target_sentence.append(self.target_special_characters['<START>'])
-        target_padding = [self.target_special_characters['<PAD>']] * (self.max_len - len(target_sentence))
-        target_sentence += target_padding
-        target_padding_vector = torch.full((len(target_sentence),), 0.0)
-        target_padding_vector[-len(target_padding):] = -torch.inf
-        target_padding_mask = from_padding_vector_to_matrix(target_padding_vector)
-        return target_sentence, target_padding_mask
-    def __getitem__(self, index):
-        '''
-
-            Notice:
-            each source-target couple NOT ONLY will have the same size
-            but all the sentences in a batch will have the same size.
-            This because the sentences in a batch should have the same size to be stack
-        '''
-        source_sentence, source_padding_mask = self.prepare_source_sentence(index)
-        target_sentence, target_padding_mask = self.prepare_target_sentence(index)
-
-        return torch.LongTensor(source_sentence), source_padding_mask, \
-                torch.LongTensor(target_sentence), target_padding_mask
 
 def check_maximum_size(data_path, maximum_lenght):
     with open(data_path, "rb") as f:
@@ -154,13 +68,13 @@ class TextTranslationDatasetOnDemand(torch.utils.data.Dataset):
         self.target_vocab_size = self.target_tokenizer.vocab.vectors.n_keys + 3
         print(self.source_vocab_size, self.target_vocab_size)
         self.source_special_characters = {
-            "<START>": self.source_vocab_size - 3,
-            "<END>": self.source_vocab_size - 2,
+            "<SOS>": self.source_vocab_size - 3,
+            "<EOS>": self.source_vocab_size - 2,
             "<PAD>": self.source_vocab_size -1
         }
         self.target_special_characters = {
-            "<START>": self.target_vocab_size - 3,
-            "<END>": self.target_vocab_size - 2,
+            "<SOS>": self.target_vocab_size - 3,
+            "<EOS>": self.target_vocab_size - 2,
             "<PAD>": self.target_vocab_size - 1
         }
     def __len__(self):
@@ -168,8 +82,8 @@ class TextTranslationDatasetOnDemand(torch.utils.data.Dataset):
 
     def prepare_source_sentence(self, raw_sentence):
         source_sentence = raw_sentence
-        source_sentence.insert(0, self.source_special_characters['<START>'])
-        source_sentence.append(self.source_special_characters['<END>'])
+        source_sentence.insert(0, self.source_special_characters['<SOS>'])
+        source_sentence.append(self.source_special_characters['<EOS>'])
         source_padding = [self.source_special_characters['<PAD>']] * (self.max_sentence_len - len(source_sentence))
         source_sentence += source_padding
         source_padding_vector = torch.full((len(source_sentence),), 0.0)
@@ -179,8 +93,8 @@ class TextTranslationDatasetOnDemand(torch.utils.data.Dataset):
 
     def prepare_target_sentence(self, raw_sentence):
         target_sentence = raw_sentence
-        target_sentence.insert(0, self.target_special_characters['<START>'])
-        target_sentence.append(self.target_special_characters['<START>'])
+        target_sentence.insert(0, self.target_special_characters['<SOS>'])
+        target_sentence.append(self.target_special_characters['<EOS>'])
         target_padding = [self.target_special_characters['<PAD>']] * (self.max_sentence_len - len(target_sentence))
         target_sentence += target_padding
         target_padding_vector = torch.full((len(target_sentence),), 0.0)

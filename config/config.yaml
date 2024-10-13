@@ -1,6 +1,6 @@
 
 
-
+seed: 42
 ##### DATASET PARAMETERS
 source_language:
   name: English
@@ -16,36 +16,32 @@ maximum_dataset_lenght: 10000
 encoder:
   vocab_size: 10000
   num_layers: 1
-  ff_hidden_size: 512
+  ff_hidden_size: 256
 
 
 #### DECODER
 decoder:
   vocab_size: 10000
   num_layers: 1
-  ff_hidden_size: 512
+  ff_hidden_size: 256
 
 #### BOTH
 same_source_target_vocabulary: False
 embedding_size: 64
 num_heads: 1
+ignore_index: None
 
 ### TRAINING CONFIG
-
 checkpoint_dir: "./checkpoints"
 logs_dir: "./logs"
-from_checkpoint: False
+from_checkpoint: True
 train: True
 test: True
 
-max_epochs: 1
+max_epochs: 5
 lr: 1e-3
+label_smoothing: 0.1
+with_scheduler: False
 batch_size: 3
 dropout: 0.1
-
-##TODO: training
-##TODO: inference
-##TODO: Debuggin training
-##TODO: COmment better
-##TODO: VOCABULARY SIZE
-##TODO: COrrect the embedding layer with the shared weights
+warmup_steps: 4000

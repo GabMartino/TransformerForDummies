@@ -94,12 +94,12 @@ class MultiHeadCrossAttentionBlock(nn.Module):
         '''
             X = (batch_size, seq_len, embedding_size)
         '''
-        batch_size, seq_len, embedding_size = x.size()
+        batch_size, seq_len_x, embedding_size = x.size()
         x = self.linear_to_kv(x)
         '''
             X = (batch_size, seq_len, embedding_size * 2) for the K and V ## ENCODER OUTPUT FOR THE CROSS ATTENTION
         '''
-        x = x.reshape(batch_size, seq_len, self.num_heads, self.head_dim * 2)
+        x = x.reshape(batch_size, seq_len_x, self.num_heads, self.head_dim * 2)
         '''
             X = (batch_size, seq_len, num_heads, head_dim * 2)
         '''
@@ -113,11 +113,12 @@ class MultiHeadCrossAttentionBlock(nn.Module):
             v = (batch_size, num_heads, seq_len, head_dim)
         '''
         ################### PREPARE INPUT FROM THE DECODER
+        _, seq_len_y, _ = y.size()
         y = self.linear_to_q(y)
         '''
             q = (batch_size, seq_len, embedding_size)
         '''
-        y = y.reshape(batch_size, seq_len, self.num_heads, self.head_dim)
+        y = y.reshape(batch_size, seq_len_y, self.num_heads, self.head_dim)
         '''
             q = (batch_size, seq_len, num_heads,head_dim)
         '''
@@ -135,7 +136,7 @@ class MultiHeadCrossAttentionBlock(nn.Module):
         '''
             out = (batch_size, seq_len, num_heads, head_dim)
         '''
-        out = out.reshape(batch_size, seq_len, -1)
+        out = out.reshape(batch_size, seq_len_y, -1)
         '''
             out = (batch_size, seq_len, num_heads * head_dim)
         '''

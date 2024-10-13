@@ -518,11 +518,41 @@ in this way can influence the generation or the termination of the output sequen
 
 
 ### What about the padding here?
-
-
+The padding is just added right after the [EOS].
 
 ## The Training
+Now the crispy things! All the guides that I found were boring, redundant and somewhat unclear on the peculiarity of the transformer training that in my opinion is base on only two things:
 
+1. **Shift Left the ground truth output of just one step;**
+2. **Set the CrossEntropyLoss to ignore the paddings!**
+
+### 1. Shift Left
+In the paper is depicted as "Output (Shifted right)", very confusing in my opinion. 
+
+Anyway, let's make an example: The ground truth output is $out = [Il, cane, è, bello, PAD, PAD, PAD]$, and this will be the input of the decoder. We remember that we need to predict the next word for each, so my approach is:
+
+- $ out\_rolled = [cane, è, bello, PAD, PAD, PAD, Il]$
+
+Set the last as padding (in a moment you'll understand why):
+
+- $ out\_rolled = [cane, è, bello, PAD, PAD, PAD, PAD]$
+- 
+```python
+target_batch_out = torch.roll(target_batch, -1, dims=-1)
+target_batch_out[:, -1] = self.padding_index
+```
+
+### 2. CrossEntropyLoss can ignore the padding
+
+When we compute the loss we don't need to match the paddings are just blank spaces, we need to compute it only for the meaningful tokens.
+Fortunately, the *nn.CrossEntropyLoss(...)* class has the *ignore_index* parameter that you can easily set.
+
+
+```python
+self.loss = nn.CrossEntropyLoss(ignore_index=self.padding_index)
+```
+
+Of course other faster ways to implement this are possible.
 
 
 ## References
