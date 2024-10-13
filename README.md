@@ -448,29 +448,29 @@ This is actually a design choice also to reduce the computation.
 
 So, in this case all the three layer share the same weights as reported in the article.
 
-uff..it was hard!
+Ok, let's continue to read:
 
-It's not finished yet! The paper also reports:
+- * **[...] In the embedding layers, we multiply those weights by $\sqrt{d_{model}}$.** * 
 
-- *In the embedding layers, we multiply those weights by $\sqrt{d_{model}}$ .* 
+...Totally out of nowhere...why now???:weary:
 
-:weary: Wait what?? Why? :confounded: :confounded:
+After a very long search and time thinking about it..
 
-The answer is that there is no answer! As also reported in [HERE](https://datascience.stackexchange.com/questions/87906/transformer-model-why-are-word-embeddings-scaled-before-adding-positional-encod "Answer 1") [HERE](https://github.com/espnet/espnet/issues/2797 "Answer 2") [HERE](https://github.com/wenet-e2e/wenet/issues/45 "Answer 3") [HERE](https://github.com/OpenNMT/OpenNMT-py/issues/1722 "Answer 4")    
+**The answer is that there is no answer!** As also reported in [HERE](https://datascience.stackexchange.com/questions/87906/transformer-model-why-are-word-embeddings-scaled-before-adding-positional-encod "Answer 1") [HERE](https://github.com/espnet/espnet/issues/2797 "Answer 2") [HERE](https://github.com/wenet-e2e/wenet/issues/45 "Answer 3") [HERE](https://github.com/OpenNMT/OpenNMT-py/issues/1722 "Answer 4")    
 
 Actually my catch on this turns around a couple of thoughs:
-- Inside the attention blocks all the dot-product are scaled by $\sqrt{d_{model}}$ that is the standard deviation of a dot-product between two independent random vector, though scaling in such a way everything has a variance of 1.
-- The layer normalization largely used is done exactly to keep every vector to variance of 1
-- From the scheme it's possible to see that we always have the layer normalization as output of both encoder and decoder
+- Inside the attention blocks all the dot-product are scaled by $\sqrt{d_{model}}$ that is the standard deviation of a dot-product between two independent random vector, though scaling in such a way everything has a variance of 1;
+- The layer normalization largely used is done exactly to keep every vector to variance of 1;
+- From the scheme it's possible to see that we always have the layer normalization as output of both encoder and decoder.
 
-Hence, my idea is that since the actual vectors that represent the tokens as inputs of both encoder and decoder "don't have variance of 1", we need to rescaled them multiplying them back by $\sqrt{d_{model}}$.
-In this way the softmax is operating using the vectors of the actual size. Still strengthening my idea, is that the scaling is done multiplying the weights! Not the whole vectors! Exactly as if we wanted to revert the layer normalization.
+Hence, my idea is that since the actual vectors that represent the tokens as inputs of both encoder and decoder "don't have variance of 1" ( I'm talking about the embedding from the embeddings layers), we need to rescaled them multiplying them back by $\sqrt{d_{model}}$.
+In this way the softmax is operating using the vectors of the actual size. 
 
 Every comment on this is largely accepted.
 
 ## The Layer normalization
 
-The only interesting thing that I'd like to report is that the normalization is done using the **Biased Variance** and not the unbiased one (strengthening even more my idea on the rescaling by $\sqrt{d_{model}}$).
+The only interesting thing that I'd like to report for this is that the normalization makes use of the **Biased Variance** and not the unbiased one (strengthening even more my idea on the rescaling by $\sqrt{d_{model}}$).
 
 We remind that:
 
@@ -488,11 +488,27 @@ Let's consider the inference time, so we are using our already trained model, an
 We already have an input sequence for the encoder, but how do we start the input of the decoder?? 
 We need a starting point from which we can compute the whole sequence, that in theory should be that first word of the translation that we do not know! 
 For this reason it's enough a dummy word that we'll call [SOS] (Start Of Sentence). 
+Let's say $f_e(x)$ is the function representing the encoder, $f_d(y, f_x(x))$ is the function representing the decoder. So, iteratively:
+- $f_d^1([SOS], f_e([The, dog, is, beautiful)) = [Il]$
+- $f_d^2([Il], f_e([The, dog, is, beautiful)) = [cane]$
+- $f_d^3([cane], f_e([The, dog, is, beautiful)) = [é]$
+- $f_d^4([è], f_e([The, dog, is, beautiful)) = [bello]$
 
 ### The [EOS] Token
 The [EOS] token (End Of Sentence) it's necessary for exactly the opposite reason of the start token. We need to stop the generation of words.
 Considering that the generation is one token at time, so practically in a for loop, we need a way to stop the generation but also allow the model to learn when to stop the generation as well.
 For this reason we need the [EOS] to be set at the end of the sentence for the decoder.
+
+- $f_d^4([è], f_e([The, dog, is, beautiful)) = [bello]$
+- $f_d^4([bello], f_e([The, dog, is, beautiful)) = [come]$
+- $f_d^4([il], f_e([The, dog, is, beautiful)) = [tramonto]$
+- ... it can continue gibbering..
+The right way:
+- $f_d^4([è], f_e([The, dog, is, beautiful)) = [bello]$
+- $f_d^4([bello], f_e([The, dog, is, beautiful)) = [EOS]$
+- STOP
+In this way we know when to stop inferencing.
+
 
 ### And in the Encoder?
 The encoder, exactly for the opposite reason of above, doesn't need the [START] nor the [EOS] token. However, these are often used in the encoder as well, mainly to help the model to understand when the input sequence of the encoder start and finishes,
