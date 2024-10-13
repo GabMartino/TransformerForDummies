@@ -420,26 +420,21 @@ However, let's read:
 <img src="./assets/Embeddings.png" alt="Paragraph" width="70%"/>
 </p>
 
-First of all,
-- *We also use the usual learned linear transformation and softmax function to convert the decoder output to predicted next-token probabilities. In
-our model, we share the same weight matrix between the two embedding layers and the pre-softmax
-linear transformation, similar to [ 30 ].*
+We first read
+- *[...], **we share the same weight matrix between the two embedding layers and the pre-softmax
+linear transformation**, [...].*
 
-So here is written that the output linear layer before the softmax is just the inverted weight matrix of the embedding layer of the decoder and the encoder as well!!
-
- :confounded: Why the embeddings that map the German language should share the same weights that map Italian??
-
-Moreover!! This means that the Vocabulary size of the SINGLE SHARED embedding layer should be: VOCAB_SIZE = German_VOCAB_SIZE + Italian_VOCAB_SIZE :angry: (I'm using as an example German as source language and Italian as target language in a translation task) 
-
-And yet!! The output of the decoder should map the next word into a German_VOCAB_SIZE + Italian_VOCAB_SIZE one-hot vector even though the only language possible is Italian, because is the target language!!! :angry: :angry:
-
-Still more non-sense!!
+Wait Wait Wait!
+- I can accept a weights sharing between the embedding layer of the Decoder and its last layer, because maybe we just want to save some parameters and because the vocabulary for the target sentence in the decoder is the same in output of course...
+- But WHY?? It should be shared with the Encoder's embedding layer, that probably will have a different vocabulary, since this model is generally considered for a task like Translation??? Am I missing something? :confounded:
 
 I searched a lot and I found one only sensed answer, thanks to 'noe' on Datascience.Stackexchange:
 
 - *The source and target embeddings can be shared or not. This is a design decision. They are normally shared if the token vocabulary is shared, and this normally happens when you have languages with the same script (i.e. the Latin alphabet). If your source and target languages are e.g. English and Chinese, which have different writing systems, your token vocabularies would probably not be shared, and then the embeddings wouldn't be shared either. NOE*
 
 - *Then, the linear projection before the softmax can be shared with the target embedding matrix. This is also a design decision. It is frequent to share them. NOE*
+
+uff...okok I took a sigh of relief, it was as I thought, just a task dependent design choice.
 
 For the all answer refer [HERE](https://datascience.stackexchange.com/questions/84930/weights-shared-by-different-parts-of-a-transformer-model "Why sharing weights") 
 
