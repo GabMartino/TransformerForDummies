@@ -107,7 +107,7 @@ This is done because if we consider $Q \in \mathbb{R}^{L \times 1}, K \in \mathb
 
 Now, **the softmax function is applied row-wise**, this is just because the later multiplication with $V$ is on the right-hand side.
 
-Remind that $softmax(x_i) = \sfrac{e^{x_i}}{\sum_i e^{x_i}}$, where the $x_i$ is in a set $X = \{x_1, x_2, ..., x_n\}$, this function just reweights the value to be summed to 1.
+Remind that $softmax(x_i) = \frac{e^{x_i}}{\sum_i e^{x_i}}$, where the $x_i$ is in a set $X = {x_1, x_2, ..., x_n}$, this function just reweights the value to be summed to 1.
 
 Hence, when the value is $-inf$ the softmax gives a weight of $0$ that means "don't consider this value".
 
