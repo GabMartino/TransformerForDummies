@@ -531,11 +531,11 @@ In the paper is depicted as "Output (Shifted right)", very confusing in my opini
 
 Anyway, let's make an example: The ground truth output is $out = [Il, cane, è, bello, PAD, PAD, PAD]$, and this will be the input of the decoder. We remember that we need to predict the next word for each, so my approach is:
 
-- $ out\_rolled = [cane, è, bello, PAD, PAD, PAD, Il]$
+- $out\_rolled = [cane, è, bello, PAD, PAD, PAD, Il]$
 
 Set the last as padding (in a moment you'll understand why):
 
-- $ out\_rolled = [cane, è, bello, PAD, PAD, PAD, PAD]$
+- $out\_rolled = [cane, è, bello, PAD, PAD, PAD, PAD]$
 - 
 ```python
 target_batch_out = torch.roll(target_batch, -1, dims=-1)
