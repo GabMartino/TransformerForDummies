@@ -503,15 +503,17 @@ For this reason we need the [EOS] to be set at the end of the sentence for the d
 - $f_d^4([bello], f_e([The, dog, is, beautiful)) = [come]$
 - $f_d^4([il], f_e([The, dog, is, beautiful)) = [tramonto]$
 - ... it can continue gibbering..
+
 The right way:
 - $f_d^4([è], f_e([The, dog, is, beautiful)) = [bello]$
 - $f_d^4([bello], f_e([The, dog, is, beautiful)) = [EOS]$
 - STOP
+
 In this way we know when to stop inferencing.
 
 
 ### And in the Encoder?
-The encoder, exactly for the opposite reason of above, doesn't need the [START] nor the [EOS] token. However, these are often used in the encoder as well, mainly to help the model to understand when the input sequence of the encoder start and finishes,
+The encoder, at least in principle, doesn't need the [SOS] nor the [EOS] token. However, these are often used in the encoder as well, mainly to help the model to understand when the input sequence of the encoder start and finishes,
 in this way can influence the generation or the termination of the output sequence. [HERE](https://github.com/Kyubyong/transformer/issues/64) [HERE](https://www.reddit.com/r/deeplearning/comments/ob03fn/the_input_format_for_the_encoder_in_transformer/)
 
 
