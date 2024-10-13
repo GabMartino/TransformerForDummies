@@ -1,18 +1,17 @@
 
 # TransformerForDummies
-
-I found that some important details of the Transformer implementation were are not totally clear 
+When I started to study the Transformer model, I found that some important details of the model implementation were not totally clear 
 and I needed to search for other implementation or explanations of these details. 
 
-For this reason, I decided to report clarifications for the most important doubts that I had, hoping that this could help some new people entering in this field!
+For this reason, I decided to report some clarifications for the most important doubts that I had, hoping that this could help some other researchers!
 
-The explainations assume a basic knowledge of the transformer models (e.g. Encoder-Decoder architecture, Multi-Head Attention Mechanism, tokenization, etc.),
-avoiding to create a redundant repository over millions already present on the web, and focusing mainly on the ambiguities.
+These explainations assume a basic knowledge of the transformer models (e.g. Encoder-Decoder architecture, Multi-Head Attention Mechanism, tokenization, etc.),
+avoiding creating a redundant repository over millions already present on the web. In this way, I can focus specifically on the ambiguities.
 
 This Repo offers:
 
-#### 1. A Readme with all the revealed ambiguities that I found
-#### 2. A complete, clear and commented implementation of the Transformer model in Pytorch and Pytorch Lightning
+#### 1. This README.md file with all the explained ambiguities that I found;
+#### 2. A complete, clear and commented implementation of the Transformer model in Pytorch and Pytorch Lightning.
 
 ## The Architecture 
 The very well known image that depict the transformer architecture hides a lot of important information that are useful for the correct implementation.
@@ -23,11 +22,11 @@ The very well known image that depict the transformer architecture hides a lot o
 Some of the first questions that came up in my mind when I had a look to this picture were:
 ### 1) **How the Encoder and Decoder are connected?**
 
-The encoder and the decoder can have multiple layers (N as reported). The encoder and the decoder are connected. The output of the encoder seems to be connected to the decoder. 
-But! Which layer?? The last one, the first one?? All of them??
+The encoder and the decoder can have multiple layers (N as reported). The output of the encoder seems to be connected to the decoder. 
+But! into which layer?? The last one, the first one?? All of them??
 
-### <center>**The Encoder Output is reported to ALL the Decoder Layers**</center>
-as reported in:
+### <center>**The Encoder Output is brought to ALL the Decoder Layers**</center>
+As reported in:
 
 <p align="center">
 <img src="./assets/transformer_explained.png" alt="Transformer Explained" width="50%"/>
@@ -50,24 +49,24 @@ Both the above answers could be extracted with a bit of interpretation from:
 </p>
 Notice the phrase: 
 
-*This allows every position in the decoder to attend over all the positions in the input sequence*
+*This allows every position in the decoder to attend over all the positions in the input sequence*, this sentence will also useful later.
 
 
 ### 3) **What's the difference among the three different attention blocks?**
 
-In the rest of the README we'll call 
-- Self-Attention block of the encoder: the attention block of the encoder (of course :) )
-- Masked-Self-Attention of block of the decoder: you got it!
-- Cross-Attention block: the block where encoder is connected to the decoder.
+In the rest of the README we'll call:
+- **Self-Attention block** of the encoder: the attention block of the encoder (of course :) )
+- **Masked-Self-Attention block** of the decoder: you got it!
+- **Cross-Attention block**: the block where encoder is connected to the decoder.
 
 Later a more detailed answer!
 
 ## The Masks
 
-I admit that I struggled a bit to understand well how the masking is used in this model, mainly because a looot of things are given for granted,
+I admit that I struggled a bit to understand well how the masking is used into this model, mainly because a looot of things are given for granted,
 and appear clear and obvious only when you start to implement things and problems come up.
 
-### 1) **How the mask is included in the Self-Attention block of the decoder?**
+### 1) **How the mask is included in the Masked-Self-Attention block of the decoder?**
 
 ### The Look-Ahead/Causal Mask
 
@@ -75,8 +74,8 @@ First of all, I would have named the "Look Ahead Mask" as "DON'T Look Ahead Mask
 This mask is used for the decoder to allow the computation of the attention only backward in the sentence. 
 
 Yes, it has sense, but why?? Well, because at the inference time, the decoder will act in auto-regressive manner, 
-that means that it only has the encoder input as complete sentence, and the decoder should generate word by word during translation, 
-hence only using the already generated words. For this reason, we need to force at the training time to learn to predict the ground-truth output sentence without looking at the next words, otherwise that's cheating!
+that means that it only has the encoder input as complete sentence, and the decoder should generate a word at time during inference.
+Hence, only using the already generated words. For this reason, we need to force at the training time to learn to predict the ground-truth output sentence without looking at the next words, otherwise that's cheating!
 
 Here we report the shape of the "Don't look ahead mask" also called "Causal Mask":
 $M^C \in \mathbb{R}^{L x L}$
@@ -93,7 +92,7 @@ $$
 
 Notice that size of the mask is $L \times L$ that is the lenght of the sentence. 
 
-The matrix is composed by zeros and $-inf$, we'll see in a moment why:
+The matrix is composed by zeros and $-inf$, we'll see in a moment why.
 
 ### **The computation of the masked attention is then**:
 
@@ -104,14 +103,11 @@ $$
 
 Notice the mask is inside the softmax function.
 
-This is done because if we consider $Q \in \mathbb{R}^{L \times 1}, K \in \mathbb{R}^{L \times 1}, V \in \mathbb{R}^{L \times 1}$,
-We would have $QK^{T} \in \mathbb{R}^{L \times L}$
+This is done because if we consider $Q \in \mathbb{R}^{L \times 1}, K \in \mathbb{R}^{L \times 1}, V \in \mathbb{R}^{L \times 1}$. We would have $QK^{T} \in \mathbb{R}^{L \times L}$
 
 Now, **the softmax function is applied row-wise**, this is just because the later multiplication with $V$ is on the right-hand side.
 
-Remind that:
-$softmax(x_i) = \frac{e^{x_i}}{\sum_i e^{x_i}}$
-Where the $x_i$ is in a set $X = \{x_1, x_2, ..., x_n\}$, this function just reweights the value to be summed to 1.
+Remind that $softmax(x_i) = \sfrac{e^{x_i}}{\sum_i e^{x_i}}$, where the $x_i$ is in a set $X = \{x_1, x_2, ..., x_n\}$, this function just reweights the value to be summed to 1.
 
 Hence, when the value is $-inf$ the softmax gives a weight of $0$ that means "don't consider this value".
 
@@ -487,11 +483,11 @@ So keep an eye on this if you want to reimplement this by yourself.
 
 Why we need to use the special tokens? Around the web and in several papers a lot of different tokens are used. 
 
-### The [START] Token
+### The [SOS] Token
 Let's consider the inference time, so we are using our already trained model, and we want to translate a source sentence into a target sentence.
 We already have an input sequence for the encoder, but how do we start the input of the decoder?? 
 We need a starting point from which we can compute the whole sequence, that in theory should be that first word of the translation that we do not know! 
-For this reason it's enough a dummy word that we'll call [START] (or whatever). 
+For this reason it's enough a dummy word that we'll call [SOS] (Start Of Sentence). 
 
 ### The [EOS] Token
 The [EOS] token (End Of Sentence) it's necessary for exactly the opposite reason of the start token. We need to stop the generation of words.

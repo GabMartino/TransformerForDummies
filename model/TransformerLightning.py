@@ -31,12 +31,8 @@ class TransformerLightning(pl.LightningModule):
                     Shift right
                 '''
         target_batch = torch.roll(target_batch, -1, -1)
+        target_batch[:, -1] = -100
         target_batch = target_batch.reshape(-1)
-        '''
-           ##TODO: to explaine the -100
-        '''
-        ##target_batch[target_batch == ] = -100
-
         loss = self.loss(x.reshape(-1, x.shape[-1]), target_batch)
         assert not torch.isnan(loss)
         self.log('train_loss', loss)
