@@ -182,7 +182,7 @@ Hence, after the:
 ```python
 values = torch.softmax(values, dim=-1)
 ```
-Using the last dimension! That in our case will be all the single rows!
+Using the last dimension! That in our case will be all the whole rows!
 
 We'll have:
 
@@ -226,16 +226,16 @@ This new vector represents a weighted combination of the values of $V$, in fact 
 
 ### The Padding Mask
 
-The padding mask has a trivial reason on why it exists: **not all the sentences have the same lenght!** **BUT WAIT!**
+The padding mask could seem trivial at first sight, but it has its own quibbles. First reason on why it is necessary: **Not all the sentences have the same lenght!**
 
-For this reason, we:
+We:
 - **Add padding tokens to bring all the sentences to have the same lenght;**
 - **Create a mask that "block" the softmax function to consider this token that are uninformative.**
 
 ## The Padding Mask: requires a paragraph for itself... Q&A
 ### 1) What if I do not want to use multiple sentences?? That means BATCH SIZE = 1?
 
-### ***<center>In this case we don't need a padding mask</center>***
+### ***<center>In this case (in theory) we don't need a padding mask</center>***
 
 ### 2) Wait? But the input encoder sentence and the input decoder sentence can have different lenghts? What about the padding then?
 
@@ -249,7 +249,7 @@ About the two sequence lenght instead, we remind from the answer 2, that the dec
 
 $$\frac{QK^{T}}{\sqrt{|E|}} \in \mathbb{R}^{(L_2 \times E) \times (E \times L_1)} = \mathbb{R}^{L_2 \times L_1}$$
 
-This first explains why the embedding size should be equal for the both encoder and the decoder. 
+This first explains why the embedding size should be equal for the both encoder and the decoder (basic linear algebra).
 
 Then, after the attention computation:
 
@@ -259,11 +259,16 @@ where the pedices $e$ and $d$ denote the encoder and the decoder respectively, s
 So,
 ### ***<center>Yes, the encoder and decoder sequences can have different lenghts, in this case the output of the decoder will have the same decoder's sequence lenght. </center>***
 
-From a practical point of view, I've never seen an implementation with different lenghts, because it's more annoying to implement and because it mostly has no sense to do it.
+From a practical point of view though, I've never seen an implementation with different lenghts, because it's more annoying to implement and because it mostly has no sense to do it.
 The only reason in which I could implement different lenghts encoder-decoder is when the lenghts of the sentences in the dataset are strongly different in the distribution between the source and target languages (assuming a translation task), in this case maybe I could have a speed up in the computation.
 
-### ***<center>In the case we want to the use (as often done) the same sequence lenght for both encoder and decoder, you probably will need a padding mask anyway, also in the case of batch size = 1.</center>***
+### ***<center>In the case we want to use (as often done) the same sequence lenght for both encoder and decoder, you probably will need a padding mask anyway, also in the case of batch size = 1.</center>***
 
+Recap:
+- Batch Size = 1 and implemented Different encoder-decoder sequence lenghts: No Padding mask;
+- Batch Size = 1 and implemented only one sequence lenght: Probably the Padding mask is needed;
+- Batch Size > 1 : Padding Mask always necessary;
+- Insights: If the different sequence lenghts possibility is implemented, possible speed up during training in batches with varying sequence lenght. (Most of the time only annoying to implement)
 
 ### 3) Ok, but the Transformer has 3 attention blocks in which one I should insert the padding mask?
 
