@@ -158,7 +158,7 @@ Now we need to apply the **softmax function ROW-WISE**. Why row-wise? because re
 $Q = K = V \in \mathbb{R}^{L \times 1}$ for this reason after the softmax we have $softmax(\frac{QK^T}{\sqrt{d_k}}) \in \mathbb{R}^{L \times L}$ that multiplied by $V \in \mathbb{R}^{L \times 1}$ we have a new column vector $A \in \mathbb{R}^{L \times 1}$ ( $(L \times L)\ times (L \times 1) = L \times (L \times L) \times 1 = L \times 1$ )
 
 
-### ACHTUNG
+### ACHTUNG :anger:
 
 #### 1. The softmax function is numerical unstable for $-inf$. For this reason, we need to modify $-inf$ values in a VERY HIGH NEGATIVE VALUE like -1E15;
 #### 2. The softmax function is applied "for each rows"! But remember how Pytorch handles the dimensions!
@@ -232,7 +232,7 @@ We:
 - **Add padding tokens to bring all the sentences to have the same lenght;**
 - **Create a mask that "block" the softmax function to consider this token that are uninformative.**
 
-## The Padding Mask: requires a paragraph for itself... Q&A
+## The Padding Mask: requires a paragraph for itself... :fire:
 ### 1) What if I do not want to use multiple sentences?? That means BATCH SIZE = 1?
 
 ### ***<center>In this case (in theory) we don't need a padding mask</center>***
@@ -392,7 +392,7 @@ $$CrossAttention(Q_{d}, K_{e}, V_{e}) = softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}
 
 Where the pedices $e$ or $d$ in this case stand for Encoder and Decoder. $M^P$ is the Padding Mask, $M^C$ is the Causal Mask, $d_k$ is the embedding dimension that in our case is $E$, (in whole in example we didn't mention the different heads).
 
-## The Embeddings
+## The Embeddings :grey_question:
 
 ### 1) How the embeddings layers are implemented?
 
@@ -409,7 +409,7 @@ VOCABULARY SIZE = 50k and EMBEDDING SIZE = 512, we'll have a linear layer of $51
 
 Moreover, considering that we have two different embeddings layers ( one for the encoder and one for the decoder), we have more than 50 millions parameters just for the first step of the processing.
 Remind that this layer is trainable.
-## The last layer of the Decoder
+## The last layer of the Decoder :fearful:
 
 Even if this part is almost straightforward, in the paper is the most ambiguous one. 
 
@@ -468,7 +468,7 @@ In this way the softmax is operating using the vectors of the actual size.
 
 Every comment on this is largely accepted.
 
-## The Layer normalization
+## The Layer normalization :satisfied:
 
 The only interesting thing that I'd like to report for this is that the normalization makes use of the **Biased Variance** and not the unbiased one (strengthening even more my idea on the rescaling by $\sqrt{d_{model}}$).
 
@@ -479,7 +479,7 @@ $$\sigma_{unbiased} = \frac{1}{N -1} \sum_{i=1}^{N} (x_i - \mu)^2$$
 
 So keep an eye on this if you want to reimplement this by yourself. 
 
-## The Special Tokens
+## The Special Tokens :relieved:
 
 Why we need to use the special tokens? Around the web and in several papers a lot of different tokens are used. 
 
