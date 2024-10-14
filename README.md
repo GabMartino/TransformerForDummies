@@ -37,10 +37,10 @@ Picture taken by (https://www.truefoundry.com/blog/transformer-architecture)
 ### 2) **How the Encoder's output is connected to the 'Multi-Head Attention of the Decoder'?**
 Every attention block has three inputs that should be the Query, Key and Value. Which one is what??
 
-###  <center>**The Keys and the Values come from the Encoder, the Queries come from the last sublayer of the decoder.**</center>
+###  <p align=center>**The Keys and the Values come from the Encoder, the Queries come from the last sublayer of the decoder.**</p>
 
 <p align="center">
-<img src="./assets/answer_2.jpg" alt="Paragraph" width="50%"/>
+<img src="./assets/answer_2.jpg" alt="Paragraph" width="35%"/>
 </p>
 
 Both the above answers could be extracted with a bit of interpretation from:
@@ -235,7 +235,7 @@ We:
 ## The Padding Mask: requires a paragraph for itself... :fire:
 ### 1) What if I do not want to use multiple sentences?? That means BATCH SIZE = 1?
 
-### ***<center>In this case (in theory) we don't need a padding mask</center>***
+### ***<p align=center>In this case (in theory) we don't need a padding mask</p>***
 
 ### 2) Wait? But the input encoder sentence and the input decoder sentence can have different lenghts? What about the padding then?
 
@@ -257,12 +257,12 @@ $$softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{|E|}})V_{e} \in \mathbb{R}^{(L_2 \times L_
 
 where the pedices $e$ and $d$ denote the encoder and the decoder respectively, since we're talking about the Cross-Attention block.
 So,
-### ***<center>Yes, the encoder and decoder sequences can have different lenghts, in this case the output of the decoder will have the same decoder's sequence lenght. </center>***
+### ***<p align=center>Yes, the encoder and decoder sequences can have different lenghts, in this case the output of the decoder will have the same decoder's sequence lenght. </p>***
 
 From a practical point of view though, I've never seen an implementation with different lenghts, because it's more annoying to implement and because it mostly has no sense to do it.
 The only reason in which I could implement different lenghts encoder-decoder is when the lenghts of the sentences in the dataset are strongly different in the distribution between the source and target languages (assuming a translation task), in this case maybe I could have a speed up in the computation.
 
-### ***<center>In the case we want to use (as often done) the same sequence lenght for both encoder and decoder, you probably will need a padding mask anyway, also in the case of batch size = 1.</center>***
+### ***<p align=center>In the case we want to use (as often done) the same sequence lenght for both encoder and decoder, you probably will need a padding mask anyway, also in the case of batch size = 1.</p>***
 
 Recap:
 - Batch Size = 1 and implemented Different encoder-decoder sequence lenghts: No Padding mask;
