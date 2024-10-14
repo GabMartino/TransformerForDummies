@@ -1,5 +1,5 @@
 
-# TransformerForDummies
+# TransformerForDummies :rocket:
 When I started to study the Transformer model, I found that some important details of the model implementation were not totally clear 
 and I needed to search for other implementation or explanations of these details. 
 
@@ -13,7 +13,7 @@ This Repo offers:
 #### 1. This README.md file with all the explained ambiguities that I found;
 #### 2. A complete, clear and commented implementation of the Transformer model in Pytorch and Pytorch Lightning.
 
-## The Architecture 
+## The Architecture :tada: 
 The very well known image that depict the transformer architecture hides a lot of important information that are useful for the correct implementation.
 <p align="center">
 <img src="./assets/Transformer_architecture.png" alt="Transformer" width="50%"/>
@@ -61,7 +61,7 @@ In the rest of the README we'll call:
 
 Later a more detailed answer!
 
-## The Masks
+## The Masks :collision:
 
 I admit that I struggled a bit to understand well how the masking is used into this model, mainly because a looot of things are given for granted,
 and appear clear and obvious only when you start to implement things and problems come up.
