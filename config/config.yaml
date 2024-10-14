@@ -10,7 +10,7 @@ target_language:
   name: Italian
   dataset_path: "./Datasets/it-en/europarl-v7.it-en.it"
 
-maximum_dataset_lenght: 10000
+maximum_dataset_lenght: 50000
 
 ###### ENCODER
 encoder:
@@ -27,7 +27,7 @@ decoder:
 
 #### BOTH
 same_source_target_vocabulary: False
-embedding_size: 64
+embedding_size: 16
 num_heads: 1
 ignore_index: None
 
@@ -35,13 +35,13 @@ ignore_index: None
 checkpoint_dir: "./checkpoints"
 logs_dir: "./logs"
 from_checkpoint: True
-train: True
+train: False
 test: True
 
-max_epochs: 5
+max_epochs: 1
 lr: 1e-3
 label_smoothing: 0.1
 with_scheduler: False
-batch_size: 3
+batch_size: 6
 dropout: 0.1
 warmup_steps: 4000

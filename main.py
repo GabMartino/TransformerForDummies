@@ -6,6 +6,7 @@ import lightning as pl
 import torch
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 from lightning.pytorch.loggers import TensorBoardLogger
+from torch.distributions import OneHotCategorical, Categorical
 
 from Dataloaders.TextTranslationDataloader import TextTranslationDataloader
 from model.TransformerLightning import TransformerLightning
@@ -54,7 +55,7 @@ def main(cfg):
     if cfg.test:
         model.eval()
         model = model.to("cpu")
-        prompt = "It doesn't work"
+        prompt = "."
         tokenized_prompt = [t.idx for t in datamodule.dataset.source_tokenizer(prompt)]
         tokenized_prompt.insert(0, datamodule.dataset.source_special_characters['<SOS>'])
         tokenized_prompt.append(datamodule.dataset.source_special_characters['<EOS>'])
@@ -69,7 +70,7 @@ def main(cfg):
             print("Start sentence")
             out = model.model(x=tokenized_sentence,
                               y=output)
-            out = torch.argmax(out, dim=-1)
+            out =  Categorical(torch.softmax(out, dim=-1)).sample()
             print(out)
             output[0, 0] = out[0, 0]
             if output[0, 0] == end_token:
@@ -82,7 +83,7 @@ def main(cfg):
             else:
                 word = datamodule.dataset.target_tokenizer.vocab.strings[output[0, 0]]
                 output_sentence.append(word)
-        print("Output Sentence", output_sentence)
+            print("Output Sentence", output_sentence)
 
 
 if __name__ == '__main__':

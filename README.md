@@ -500,13 +500,13 @@ Considering that the generation is one token at time, so practically in a for lo
 For this reason we need the [EOS] to be set at the end of the sentence for the decoder.
 
 - $f_d^4([è], f_e([The, dog, is, beautiful)) = [bello]$
-- $f_d^4([bello], f_e([The, dog, is, beautiful)) = [come]$
-- $f_d^4([il], f_e([The, dog, is, beautiful)) = [tramonto]$
+- $f_d^5([bello], f_e([The, dog, is, beautiful)) = [come]$
+- $f_d^6([il], f_e([The, dog, is, beautiful)) = [tramonto]$
 - ... it can continue gibbering..
 
 The right way:
 - $f_d^4([è], f_e([The, dog, is, beautiful)) = [bello]$
-- $f_d^4([bello], f_e([The, dog, is, beautiful)) = [EOS]$
+- $f_d^5([bello], f_e([The, dog, is, beautiful)) = [EOS]$
 - STOP
 
 In this way we know when to stop inferencing.
@@ -523,7 +523,7 @@ The padding is just added right after the [EOS].
 ## The Training
 Now the crispy things! All the guides that I found were boring, redundant and somewhat unclear on the peculiarity of the transformer training that in my opinion is base on only two things:
 
-1. **Shift Left the ground truth output of just one step;**
+1. **Shift Left the ground-truth output of just one step;**
 2. **Set the CrossEntropyLoss to ignore the paddings!**
 
 ### 1. Shift Left
@@ -531,12 +531,12 @@ In the paper is depicted as "Output (Shifted right)", very confusing in my opini
 
 Anyway, let's make an example: The ground truth output is $out = [Il, cane, è, bello, PAD, PAD, PAD]$, and this will be the input of the decoder. We remember that we need to predict the next word for each, so my approach is:
 
-- $out\_rolled = [cane, è, bello, PAD, PAD, PAD, Il]$
+- $out-rolled = [cane, è, bello, PAD, PAD, PAD, Il]$
 
 Set the last as padding (in a moment you'll understand why):
 
-- $out\_rolled = [cane, è, bello, PAD, PAD, PAD, PAD]$
-- 
+- $out-rolled = [cane, è, bello, PAD, PAD, PAD, PAD]$
+
 ```python
 target_batch_out = torch.roll(target_batch, -1, dims=-1)
 target_batch_out[:, -1] = self.padding_index
@@ -544,7 +544,7 @@ target_batch_out[:, -1] = self.padding_index
 
 ### 2. CrossEntropyLoss can ignore the padding
 
-When we compute the loss we don't need to match the paddings are just blank spaces, we need to compute it only for the meaningful tokens.
+When we compute the loss we don't need to match the paddings, since are just blank spaces. We need to compute it only for the meaningful tokens.
 Fortunately, the *nn.CrossEntropyLoss(...)* class has the *ignore_index* parameter that you can easily set.
 
 
