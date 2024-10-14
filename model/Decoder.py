@@ -28,6 +28,7 @@ class DecoderLayer(nn.Module):
                                       nn.Linear(ff_hidden_size, embedding_size),
                                       nn.Dropout(dropout))
         self.layer_norm_2 = LayerNormalization(self.embedding_size)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, decoder_mask, encoder_output):
         residual = x
@@ -37,15 +38,18 @@ class DecoderLayer(nn.Module):
                 MASK = LOOK AHEAD MASK + PADDING MASK 
         '''
         x = self.masked_multihead_attention(x, mask=decoder_mask)
+        x = self.dropout(x)
         x = self.layer_norm_1(x + residual)
 
 
         residual = x
         x = self.multihead_cross_attention(encoder_output, x, mask=None) ##check mask
+        x = self.dropout(x)
         x = self.layer_norm_2(x + residual)
 
         residual = x
         x = self.ff_model(x)
+        x = self.dropout(x)
         x = self.layer_norm_2(x + residual)
         return x
 

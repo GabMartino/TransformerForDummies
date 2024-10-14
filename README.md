@@ -479,6 +479,20 @@ $$\sigma_{unbiased} = \frac{1}{N -1} \sum_{i=1}^{N} (x_i - \mu)^2$$
 
 So keep an eye on this if you want to reimplement this by yourself. 
 
+## The Dropout
+The article reports:
+- _**Each layer has two sub-layers. The first is a multi-head self-attention mechanism, and the second is a simple, position-
+wise fully connected feed-forward network.**_ 
+- _**We apply dropout [ 33] to the output of each sub-layer, before it is added to the
+sub-layer input and normalized. In addition, we apply dropout to the sums of the embeddings and the
+positional encodings in both the encoder and decoder stacks.[...]**_
+
+Hence, we deduce that the dropout layers are reported how depicted in the picture below:
+
+<p align="center">
+<img src="./assets/Dropout.png" alt="Paragraph" width="50%"/>
+</p>
+
 ## The Special Tokens :relieved:
 
 Why we need to use the special tokens? Around the web and in several papers a lot of different tokens are used. 

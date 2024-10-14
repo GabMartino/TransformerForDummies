@@ -19,16 +19,18 @@ class EncoderLayer(nn.Module):
         self.ff_model = nn.Sequential(nn.Linear(embedding_size, ff_hidden_size),
                                       nn.ReLU(),
                                       nn.Dropout(dropout),
-                                      nn.Linear(ff_hidden_size, embedding_size),
-                                      nn.Dropout(dropout))
+                                      nn.Linear(ff_hidden_size, embedding_size))
         self.layer_norm_2 = LayerNormalization(embedding_size)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, mask = None):
         residual = x
         x = self.multi_head_attention(x, mask=mask)
+        x = self.dropout(x)
         x = self.layer_norm_1(x + residual)
         residual = x
         x = self.ff_model(x)
+        x = self.dropout(x)
         x = self.layer_norm_2(x + residual)
         return x
 
