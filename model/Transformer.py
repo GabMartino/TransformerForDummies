@@ -42,6 +42,7 @@ class Transformer(nn.Module):
                                                      config.embedding_size)
 
         self.positional_encoding = PositionalEncoding(config.embedding_size)
+        self.dropout = nn.Dropout(config.dropout)
 
     def forward(self, x,  y, source_mask = None,target_mask = None):
         source_embedding = self.source_embedding(x)
@@ -53,6 +54,7 @@ class Transformer(nn.Module):
            Add positional encoding to the embedding
        '''
         source_embedding = source_embedding + source_encoding
+        source_embedding = self.dropout(source_embedding)
         '''
             ENCODER
         '''
@@ -63,6 +65,7 @@ class Transformer(nn.Module):
         target_embedding = self.target_embedding(y)
         target_encoding = self.positional_encoding(y)
         target_embedding = target_embedding + target_encoding
+        target_embedding = self.dropout(target_embedding)
         out = self.decoder(x=target_embedding, decoder_mask=target_mask, encoder_output=encoder_output)
         '''
             OUTPUT
