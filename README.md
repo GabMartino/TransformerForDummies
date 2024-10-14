@@ -493,6 +493,10 @@ Hence, we deduce that the dropout layers are reported how depicted in the pictur
 <img src="./assets/Dropout.png" alt="Paragraph" width="50%"/>
 </p>
 
+What it not mentioned in the article is that the Dropout is also implemented inside the attention mechanism [HERE](https://serp.ai/attention-dropout/) [HERE](https://stats.stackexchange.com/questions/509798/attention-dropout-where-was-it-proposed-used-first):
+
+- _**After the Softmax function add a dropout**_
+
 ## The Special Tokens :relieved:
 
 Why we need to use the special tokens? Around the web and in several papers a lot of different tokens are used. 
@@ -571,5 +575,6 @@ Of course other faster ways to implement this are possible.
 
 ## References
 
-- https://arxiv.org/abs/1706.03762] (https://arxiv.org/abs/1706.03762)
-- https://jalammar.github.io/illustrated-transformer/(https://jalammar.github.io/illustrated-transformer/)
+- [Attention is All You Need] (https://arxiv.org/abs/1706.03762)
+- [Illustrated Transformer] (https://jalammar.github.io/illustrated-transformer/)
+- [The Annotated Transformer] ( https://nlp.seas.harvard.edu/2018/04/03/attention.html)

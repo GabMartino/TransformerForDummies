@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 from model.utils.utils import create_random_padding_mask, create_look_ahead_mask
 import logging
 
-def scaled_dot_attention(q, k, v, mask = None):
+def scaled_dot_attention(q, k, v, mask = None, dropout = None):
     logging.debug("Q= ", q )
     scaled = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(q.size(-1))
     if mask is not None:
@@ -26,15 +26,18 @@ def scaled_dot_attention(q, k, v, mask = None):
         scaled[scaled == -torch.inf] = -1e9 ## apply after to allow the upper sum operation to recognize the -inf
 
     attention = torch.softmax(scaled, dim=-1)
+    if dropout is not None:
+        attention = torch.dropout(attention, p=dropout)
     output = torch.matmul(attention, v)
     return output, attention
 
 class MultiHeadSelfAttentionBlock(nn.Module):
-    def __init__(self, embedding_size, num_heads):
+    def __init__(self, embedding_size, num_heads, dropout_rate = None):
         super(MultiHeadSelfAttentionBlock, self).__init__()
         self.embedding_size = embedding_size
         self.num_heads = num_heads
         self.head_dim = embedding_size // num_heads
+        self.dropout_rate = dropout_rate
         assert self.head_dim * num_heads == self.embedding_size
 
         self.linear_to_qkv = nn.Linear(embedding_size, embedding_size * 3)
@@ -62,7 +65,7 @@ class MultiHeadSelfAttentionBlock(nn.Module):
             k = (batch_size, num_heads, seq_len, head_dim)
             v = (batch_size, num_heads, seq_len, head_dim)
         '''
-        out, _ = scaled_dot_attention(q, k, v, mask)
+        out, _ = scaled_dot_attention(q, k, v, mask, dropout = self.dropout_rate)
         '''
             out = (batch_size, num_heads, seq_len, head_dim)
         '''
@@ -79,11 +82,12 @@ class MultiHeadSelfAttentionBlock(nn.Module):
 
 
 class MultiHeadCrossAttentionBlock(nn.Module):
-    def __init__(self, embedding_size, num_heads):
+    def __init__(self, embedding_size, num_heads, droput_rate = None):
         super(MultiHeadCrossAttentionBlock, self).__init__()
         self.embedding_size = embedding_size
         self.num_heads = num_heads
         self.head_dim = embedding_size // num_heads
+        self.dropout_rate = droput_rate
         assert self.head_dim * num_heads == self.embedding_size
 
         self.linear_to_kv = nn.Linear(embedding_size, embedding_size * 2)
@@ -128,7 +132,7 @@ class MultiHeadCrossAttentionBlock(nn.Module):
         '''
         ################# CROSS ATTENTION
 
-        out, _ = scaled_dot_attention(q, k, v, mask)
+        out, _ = scaled_dot_attention(q, k, v, mask, dropout = self.dropout_rate)
         '''
             out = (batch_size, num_heads, seq_len, head_dim)
         '''
