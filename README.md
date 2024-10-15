@@ -13,6 +13,7 @@ This Repo offers:
 #### 1. This README.md file with all the explained ambiguities that I found;
 #### 2. A complete, clear and commented implementation of the Transformer model in Pytorch and Pytorch Lightning.
 
+#### :warning: Note: this Repo is currently under extension and correction...
 ## The Architecture :tada: 
 The very well known image that depict the transformer architecture hides a lot of important information that are useful for the correct implementation.
 <p align="center">
