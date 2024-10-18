@@ -56,7 +56,7 @@ class TextTranslationDatasetOnDemand(torch.utils.data.Dataset):
         self.target_vocabulary["[SOS]"] = len(self.target_vocabulary)
         self.target_vocabulary["[EOS]"] = len(self.target_vocabulary)
         self.target_vocabulary["[PAD]"] = len(self.target_vocabulary)
-
+        print( self.target_vocabulary["[SOS]"],  self.target_vocabulary["[EOS]"],  self.target_vocabulary["[PAD]"])
         self.max_dataset_lenght = max_dataset_lenght
         self.max_sentence_len = max_sentence_len + 2
         check_maximum_size(self.source_data_path, max_dataset_lenght)
@@ -77,17 +77,6 @@ class TextTranslationDatasetOnDemand(torch.utils.data.Dataset):
         source_padding_vector[-len(source_padding):] = -torch.inf
         source_padding_mask = from_padding_vector_to_matrix(source_padding_vector)
         return source_sentence, source_padding_mask
-
-    def prepare_target_sentence(self, raw_sentence):
-        target_sentence = raw_sentence
-        target_sentence.insert(0, self.target_special_characters['<SOS>'])
-        target_sentence.append(self.target_special_characters['<EOS>'])
-        target_padding = [self.target_special_characters['<PAD>']] * (self.max_sentence_len - len(target_sentence))
-        target_sentence += target_padding
-        target_padding_vector = torch.full((len(target_sentence),), 0.0)
-        target_padding_vector[-len(target_padding):] = -torch.inf
-        target_padding_mask = from_padding_vector_to_matrix(target_padding_vector)
-        return target_sentence, target_padding_mask
 
     def get_next_valid_sentence(self, index, data_path, vocabulary):
         tokenized_sentence = None

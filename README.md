@@ -279,7 +279,7 @@ Recap:
 Reporting the same paragraph above:
 
 <p align="center">
-<img src="./assets/paragraph_1.jpg" alt="Paragraph" width="70%"/>
+<img src="./assets/paragraph_1.jpg" alt="Paragraph" width="90%"/>
 </p>
 
 The sentence "*This allows every

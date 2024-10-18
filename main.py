@@ -69,7 +69,8 @@ def main(cfg):
         model.eval()
         model = model.to("cpu")
         model = model.model
-        prompt = "Hi, How are you?"
+        print("model size", model.target_embedding.linear_out.out_features)
+        prompt = "bridge"
         '''
             1. Tokenize
         '''
@@ -84,20 +85,18 @@ def main(cfg):
             3. Let's create the input for the decoder 
         '''
         decoder_input = [datamodule.dataset.target_vocabulary["[SOS]"]]
-        #print(tokenized_sentence, decoder_input)
-        #print(token_to_text(tokenized_sentence, vocabulary), token_to_text(decoder_input, datamodule.dataset.target_vocabulary))
+        print(tokenized_sentence, decoder_input)
+        print(token_to_text(tokenized_sentence, vocabulary), token_to_text(decoder_input, datamodule.dataset.target_vocabulary))
 
         tokenized_sentence = torch.LongTensor(tokenized_sentence, device="cpu").unsqueeze(0)
         decoder_input = torch.LongTensor(decoder_input, device="cpu").unsqueeze(0)
-
         while True:
             out = model(x=tokenized_sentence, y=decoder_input)
-            out = torch.argmax(torch.softmax(out, dim=-1)).unsqueeze(0).unsqueeze(0) ## I'm just using the argmax, i'm not sampling
+            out = torch.argmax(torch.softmax(out, dim=-1)) ## I'm just using the argmax, i'm not sampling
+            decoder_input = torch.cat([decoder_input, out.unsqueeze(0).unsqueeze(0)], dim=-1)
             if out == datamodule.dataset.target_vocabulary["[EOS]"]:
                 break
-            print(out)
-            decoder_input = torch.cat([decoder_input, out], dim=-1)
-        print(decoder_input)
+            print(token_to_text(decoder_input.squeeze(0).numpy(), datamodule.dataset.target_vocabulary))
 
 
 
