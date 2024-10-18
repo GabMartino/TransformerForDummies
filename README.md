@@ -268,11 +268,11 @@ From a practical point of view though, we need to understand when have different
 - *Inference*:
   - At inference time (manually testing the model for example) often we use just one input, in this case we don't need the padding since the batch size = 1. 
   - On the other hand if we implemented the model in such a way it is possible to have different sizes of encoder's input and output's, we don't even need the padding for the input.
+
 Recap:
-- Batch Size = 1 and implemented Different encoder-decoder sequence lenghts: No Padding mask;
-- Batch Size = 1 and implemented only one sequence lenght: Probably the Padding mask is needed;
-- Batch Size > 1 : Padding Mask always necessary;
-- Insights: If the different sequence lenghts possibility is implemented, possible speed up during training in batches with varying sequence lenght. (Most of the time only annoying to implement)
+- The padding is used for two reasons:
+  - Aligning the sequences for the same batch;
+  - Aligning the sequences for between the two batches of encoder and decoder (depends on the implementation).
 
 ### 3) Ok, but the Transformer has 3 attention blocks in which one I should insert the padding mask?
 
