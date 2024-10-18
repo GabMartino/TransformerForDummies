@@ -32,7 +32,13 @@ def create_look_ahead_mask(batch_size, seq_len):
     mask = mask.repeat(batch_size, 1, 1)
     return mask
 
-
+def token_to_text(tokenized_sentence, vocabulary):
+    inv_map = {v: k for k, v in vocabulary.items()}
+    sentence = []
+    for token in tokenized_sentence:
+        word = inv_map.get(token, "[UNK]")
+        sentence.append(word)
+    return sentence
 def main():
     batch_size = 1
     seq_len = 5

@@ -6,10 +6,12 @@ import lightning as pl
 import torch
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 from lightning.pytorch.loggers import TensorBoardLogger
-from torch.distributions import OneHotCategorical, Categorical
+from nltk import word_tokenize
 
 from Dataloaders.TextTranslationDataloader import TextTranslationDataloader
 from model.TransformerLightning import TransformerLightning
+from model.utils.utils import token_to_text
+
 
 def get_newest_checkpoint(data_path):
     list_of_files = glob.glob(data_path + "/*")
@@ -24,14 +26,25 @@ def main(cfg):
     torch.set_float32_matmul_precision('medium')
     datamodule = TextTranslationDataloader(source_data_path=cfg.source_language.dataset_path,
                                            source_language=cfg.source_language.name,
+                                           source_vocabulary_path=cfg.source_language.vocabulary_path,
                                            target_data_path=cfg.target_language.dataset_path,
                                            target_language=cfg.target_language.name,
+                                           target_vocabulary_path=cfg.target_language.vocabulary_path,
                                            batch_size=cfg.batch_size,
                                            max_dataset_lenght=cfg.maximum_dataset_lenght)
 
+
+    '''
+        These variable are necessary to implement the model (embedding size in the embedding layers)
+    '''
     cfg.encoder.vocab_size = datamodule.dataset.source_vocab_size
     cfg.decoder.vocab_size = datamodule.dataset.target_vocab_size
-    cfg.ignore_index = datamodule.dataset.target_special_characters['<PAD>']
+    '''
+        This variable is necessary to set the ignore index in the cross entropy loss 
+    '''
+    cfg.ignore_index = datamodule.dataset.target_vocabulary["[PAD]"]
+
+
     model = None
     if cfg.from_checkpoint:
         model = TransformerLightning.load_from_checkpoint(get_newest_checkpoint(cfg.checkpoint_dir))
@@ -55,35 +68,39 @@ def main(cfg):
     if cfg.test:
         model.eval()
         model = model.to("cpu")
-        prompt = "."
-        tokenized_prompt = [t.idx for t in datamodule.dataset.source_tokenizer(prompt)]
-        tokenized_prompt.insert(0, datamodule.dataset.source_special_characters['<SOS>'])
-        tokenized_prompt.append(datamodule.dataset.source_special_characters['<EOS>'])
-        tokenized_sentence = torch.LongTensor(tokenized_prompt).unsqueeze(0)
+        model = model.model
+        prompt = "Hi, How are you?"
+        '''
+            1. Tokenize
+        '''
+        vocabulary = datamodule.dataset.source_vocabulary
+        tokenized_sentence = [vocabulary[t.lower()] for t in word_tokenize(prompt)]
+        '''
+            2. Let's insert the [SOS] and [EOS] token in the source sentence
+        '''
+        tokenized_sentence.insert(0, vocabulary["[SOS]"])
+        tokenized_sentence.append(vocabulary["[EOS]"])
+        '''
+            3. Let's create the input for the decoder 
+        '''
+        decoder_input = [datamodule.dataset.target_vocabulary["[SOS]"]]
+        #print(tokenized_sentence, decoder_input)
+        #print(token_to_text(tokenized_sentence, vocabulary), token_to_text(decoder_input, datamodule.dataset.target_vocabulary))
 
-        output = torch.LongTensor([datamodule.dataset.target_special_characters['<SOS>']]).unsqueeze(0)
-        end_token = torch.LongTensor([datamodule.dataset.target_special_characters['<EOS>']]).unsqueeze(0)
-        print(output.shape, end_token.shape, tokenized_sentence.shape)
-        output_sentence  = ['[SOS]']
+        tokenized_sentence = torch.LongTensor(tokenized_sentence, device="cpu").unsqueeze(0)
+        decoder_input = torch.LongTensor(decoder_input, device="cpu").unsqueeze(0)
+
         while True:
-            print("Input sentence", tokenized_sentence)
-            print("Start sentence")
-            out = model.model(x=tokenized_sentence,
-                              y=output)
-            out =  Categorical(torch.softmax(out, dim=-1)).sample()
-            print(out)
-            output[0, 0] = out[0, 0]
-            if output[0, 0] == end_token:
-                output_sentence.append('[EOS]')
+            out = model(x=tokenized_sentence, y=decoder_input)
+            out = torch.argmax(torch.softmax(out, dim=-1)).unsqueeze(0).unsqueeze(0) ## I'm just using the argmax, i'm not sampling
+            if out == datamodule.dataset.target_vocabulary["[EOS]"]:
                 break
-            elif output[0, 0] == datamodule.dataset.target_special_characters['<SOS>']:
-                output_sentence.append('[PAD]')
-            elif output[0, 0] == datamodule.dataset.target_special_characters['<PAD>']:
-                output_sentence.append('[PAD]')
-            else:
-                word = datamodule.dataset.target_tokenizer.vocab.strings[output[0, 0]]
-                output_sentence.append(word)
-            print("Output Sentence", output_sentence)
+            print(out)
+            decoder_input = torch.cat([decoder_input, out], dim=-1)
+        print(decoder_input)
+
+
+
 
 
 if __name__ == '__main__':

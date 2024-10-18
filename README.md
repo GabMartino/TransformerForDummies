@@ -234,13 +234,13 @@ We:
 - **Create a mask that "block" the softmax function to consider this token that are uninformative.**
 
 ## The Padding Mask: requires a paragraph for itself... :fire:
-### 1) What if I do not want to use multiple sentences?? That means BATCH SIZE = 1?
+### 1) What if I do not want to use multiple sentences?? (BATCH SIZE = 1)?
 
-### ***<p align=center>In this case (in theory) we don't need a padding mask</p>***
+### ***<p align=center>In this case we don't need a padding mask</p>***
 
-### 2) Wait? But the input encoder sentence and the input decoder sentence can have different lenghts? What about the padding then?
+### 2) Wait? But the encoder's input and the decoder's input can have different lenghts? What about the padding then?
 
-At least in theory the two inputs can have a different lenghts. 
+### ***<p align=center>The two inputs can have a different lenghts. </p>***
 
 Let's assume that we have the batch size equals to 1, the encoder output is $X \in \mathbb{R}^{L_1 \times E}$ and the input of the decoder is $Y \in \mathbb{R}^{L_2 \times E}$ (the same dimensionality of the input of the decoder is reported till the point of the conjuction of the two, that is the "Cross-Attention"), where $L_1$ is the lenght of the sentence in the encoder, $L_2$ is the lenght of the sentence in the decoder, $E$ is the embedding size.
 
@@ -258,13 +258,16 @@ $$softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{|E|}})V_{e} \in \mathbb{R}^{(L_2 \times L_
 
 where the pedices $e$ and $d$ denote the encoder and the decoder respectively, since we're talking about the Cross-Attention block.
 So,
-### ***<p align=center>Yes, the encoder and decoder sequences can have different lenghts, in this case the output of the decoder will have the same decoder's sequence lenght. </p>***
+### ***<p align=center>In this case the decoder's output will have the same decoder's input lenght. </p>***
 
-From a practical point of view though, I've never seen an implementation with different lenghts, because it's more annoying to implement and because it mostly has no sense to do it.
-The only reason in which I could implement different lenghts encoder-decoder is when the lenghts of the sentences in the dataset are strongly different in the distribution between the source and target languages (assuming a translation task), in this case maybe I could have a speed up in the computation.
-
-### ***<p align=center>In the case we want to use (as often done) the same sequence lenght for both encoder and decoder, you probably will need a padding mask anyway, also in the case of batch size = 1.</p>***
-
+From a practical point of view though, we need to understand when have different lenghts is convenient, necessary or else:
+- *Training*: 
+  - during the training the batch size is larger than 1, so the padding *IS NECESSARY*.
+  - It theory it is also possible to create batches for the encoder and the decoder of different lenghts (sequence lenghts, not the batch size of course). This can be annoying from the implementative point of view, but it could be convenient if there a large difference in the lenghts of tokens between the two languages (if we consider a translation task)
+  - In practise during the training, the dataloader is often implemented using the same lenghts for the encoder's and decoder's inputs
+- *Inference*:
+  - At inference time (manually testing the model for example) often we use just one input, in this case we don't need the padding since the batch size = 1. 
+  - On the other hand if we implemented the model in such a way it is possible to have different sizes of encoder's input and output's, we don't even need the padding for the input.
 Recap:
 - Batch Size = 1 and implemented Different encoder-decoder sequence lenghts: No Padding mask;
 - Batch Size = 1 and implemented only one sequence lenght: Probably the Padding mask is needed;

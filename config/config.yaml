@@ -5,11 +5,12 @@ seed: 42
 source_language:
   name: English
   dataset_path: "./Datasets/it-en/europarl-v7.it-en.en"
+  vocabulary_path: "./Dataloaders/english_vocab.json"
 
 target_language:
   name: Italian
   dataset_path: "./Datasets/it-en/europarl-v7.it-en.it"
-
+  vocabulary_path: "./Dataloaders/italian_vocab.json"
 maximum_dataset_lenght: 50000
 
 ###### ENCODER
@@ -34,8 +35,8 @@ ignore_index: None
 ### TRAINING CONFIG
 checkpoint_dir: "./checkpoints"
 logs_dir: "./logs"
-from_checkpoint: True
-train: False
+from_checkpoint: False
+train: True
 test: True
 
 max_epochs: 1
