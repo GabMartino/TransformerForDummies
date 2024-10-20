@@ -428,8 +428,7 @@ $$Q_dK_e^T = \begin{bmatrix} 4 & 5 & 6 & 7 & 1*[null_e] & 1*[null_e] \\\
  [null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & [null_d]*[null_e] & [null_d]*[null_e] \\\
 [null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & [null_d]*[null_e] & [null_d]*[null_e]  \\\
 [null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & [null_d]*[null_e] & [null_d]*[null_e] 
-\end{bmatrix}
-$$
+\end{bmatrix}$$
 
 Where $null_d$ or $null_e$ represent the values in the vector correspondent to the padding values of decoder and encoder respectively.
 
@@ -600,13 +599,14 @@ Just to experimentally validate this assertion I trained a simple Transformer mo
 
 $$SelfAttention(Q_{e}, K_{e}, V_{e}) = softmax(\frac{Q_{e}K_{e}^{T}}{\sqrt{d_k}} + M_e^{P})V_{e}$$
 
+$M_e^{P} = M_e^{left} + M_e^{right}$ that is $M_e^{left} = M_e^{right}^T$
 #### - Decoder MASKED Self-Attention block: : 
 
 $$MaskedSelfAttention(Q_{d}, K_{d}, V_{d}) = softmax(\frac{Q_{d}K_{d}^{T}}{\sqrt{d_k}} + M_d^{P} + M^{C})V_{d}$$
-
+$M_d^{P} = M_d^{left} + M_d^{right}$ that is $M_d^{left} = M_d^{right}^T$
 #### - Encoder-Decoder Cross-Attention block: 
 
-$$CrossAttention(Q_{d}, K_{e}, V_{e}) = softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}})V_{e}$$
+$$CrossAttention(Q_{d}, K_{e}, V_{e}) = softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right})V_{e}$$
 
 Where the pedices $e$ or $d$ in this case stand for Encoder and Decoder. $M^P$ is the Padding Mask, $M^C$ is the Causal Mask, $d_k$ is the embedding dimension that in our case is $E$, (in whole in example we didn't mention the different heads).
 
