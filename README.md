@@ -1,5 +1,3 @@
-from torchvision.models.detection.roi_heads import paste_mask_in_image
-
 # TransformerForDummies :rocket:
 When I started to study the Transformer model, I found that some important details of the model implementation were not totally clear 
 and I needed to search for other implementation or explanations of these details. 
@@ -100,7 +98,7 @@ The matrix is composed by zeros and $-inf$, we'll see in a moment why.
 
 
 $$
-    Attention(Q, K, V) = softmax\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M\bigg)V
+    Attention(Q, K, V) = softmax\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M^C\bigg)V
 $$
 
 Notice the mask is inside the softmax function.
@@ -264,7 +262,7 @@ So,
 From a practical point of view though, we need to understand when have different lenghts is convenient, necessary or else:
 - *Training*: 
   - during the training the batch size is larger than 1, so the padding *IS NECESSARY*.
-  - It theory it is also possible to create batches for the encoder and the decoder of different lenghts (sequence lenghts, not the batch size of course). This can be annoying from the implementative point of view, but it could be convenient if there a large difference in the lenghts of tokens between the two languages (if we consider a translation task)
+  - It theory it is also possible to create batches for the encoder and the decoder of different lenghts (sequence lenghts, not the batch size of course). This can be annoying from the implementative point of view, but it could be convenient if there is a large difference in the lenghts of the sequences between the two languages (if we consider a translation task)
   - In practise during the training, the dataloader is often implemented using the same lenghts for the encoder's and decoder's inputs
 - *Inference*:
   - At inference time (manually testing the model for example) often we use just one input, in this case we don't need the padding since the batch size = 1. 
@@ -351,7 +349,10 @@ padding_mask_left = padding_mask_right.transpose(-1, -2)
 padding_mask = (padding_mask_left | padding_mask_right).float()
 padding_mask[padding_mask == 1.] = -torch.inf
 ```
-but I'm pretty sure more efficient ways exists.
+but I'm pretty sure more efficient ways exists. 
+It's important to notice also from the implementation, that the padding mask is like it is composed by two masks. This is because $Q$ and $K^T$ are vector with each having its own padding mask. 
+In this case the two vectors are the same so the resulting padding mask is simmetric.
+
 
 Hence, we'll have a different padding mask for each sentence. 
 
@@ -383,22 +384,29 @@ The article reports:
 <img src="./assets/paragraph_1.jpg" alt="Paragraph" width="90%"/>
 </p>
 
-So, if we need to consider the same rational where "all the positions" means all the meaningful positions, Do we need to combine two! padding masks??,
-the encoder and the decoder one, also considering that Queries come from the decoder and the Keys from the encoder ??. However, since I didn't want to speculate much, I needed to investigate more.
+So, if we need to consider the same rational where "all the positions" means all the meaningful positions, Do we need to combine two padding masks??,
+the encoder and the decoder's one, also considering that Queries come from the decoder and the Keys from the encoder?? However, since I didn't want to speculate much, I needed to investigate more.
 
 First of all, I found that the same question has been asked a lot around the web, but few time I've seen a reasonable answer: [HERE](https://medium.com/@sxyxiaoyao/i-have-a-question-about-this-line-code-why-we-need-memory-mask-in-decoder-ab7d5a9e8060) [HERE](https://github.com/pytorch/pytorch/issues/124931) [HERE](https://stackoverflow.com/questions/62170439/difference-between-src-mask-and-src-key-padding-mask) [HERE](https://medium.com/@bavalpreetsinghh/transformer-from-scratch-using-pytorch-28a5d1b2e033) [HERE](https://datascience.stackexchange.com/questions/65067/proper-masking-in-the-transformer-model) [HERE](https://datascience.stackexchange.com/questions/88097/why-do-transformers-mask-at-every-layer-instead-of-just-at-the-input-layer) [HERE](https://ai.stackexchange.com/questions/25041/is-the-decoder-mask-triangular-mask-applied-only-in-the-first-decoder-block-o)
-Unfortunately, not all the answer were clear and agreed to each other. In spite of this, I tried to have my own answer as an average of what I found, mainly based on these factors:
+
+Unfortunately, not all the answer were clear and agreed to each other. In spite of this, I tried to have my own answer, mainly based on these factors:
 
 - The official Pytorch Implementation of the Transformer model has as parameter the **_memory_mask_** [HERE](https://pytorch.org/docs/stable/generated/torch.nn.Transformer.html)
-- [This article](https://medium.com/@bavalpreetsinghh/transformer-from-scratch-using-pytorch-28a5d1b2e033) reports that it is necessary to avoid conflict.
-- [This](https://stackoverflow.com/questions/62170439/difference-between-src-mask-and-src-key-padding-mask) instead reports that the memory mask is just the same as the encoder-input's padding mask, so in general applied to the Keys.
+- [This article](https://medium.com/@bavalpreetsinghh/transformer-from-scratch-using-pytorch-28a5d1b2e033) reports that it is necessary to avoid conflict. Which conflict? Not explained.
+- [This](https://stackoverflow.com/questions/62170439/difference-between-src-mask-and-src-key-padding-mask) instead reports that the memory mask is just the same as the encoder-input's padding mask, so in general applied to the Keys. Ok, but why?
 
-Ok, my catch on this is: The Cross-Attention block needs a Padding Mask; In the official implementations there is what is called Memory Mask that seems to be a copy of the encoder's input padding mask; I haven't found anything about the inclusion of the decoder's input padding mask.
+Ok, my catch on this is: 
+1. The Cross-Attention block needs a Padding Mask; 
+2. In the official implementations there is what is called Memory Mask that seems to be a copy of the encoder's input padding mask; 
+3. I haven't found anything about the inclusion of the decoder's input padding mask.
 
-However, I wasn't satisfied with this. I had to prove the sense by myself. $Q_d \in \mathbb{R}^{L_2 \times E}, K_e^T \in \mathbb{R}^{E \times L_1}, V_e \in \mathbb{R}^{L_1 \times E}$ with $E = 1$
+However, I wasn't satisfied with this. I had to prove the sense by myself. 
 
-$$
-    Q_d = \begin{bmatrix}
+So, let's start with and example where queries come from the decoder, and the keys and values are the same vector from the encoder output.
+
+$Q_d \in \mathbb{R}^{L_2 \times E}, K_e^T \in \mathbb{R}^{E \times L_1}, V_e \in \mathbb{R}^{L_1 \times E}$ with $E = 1$
+
+$$Q_d = \begin{bmatrix}
     1\\\
     2 \\\
     3 \\\
