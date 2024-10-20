@@ -603,7 +603,7 @@ $M_e^{P} = M_e^{left} + M_e^{right}$ that is $M_e^{left} = M_e^{right}^T$
 #### - Decoder MASKED Self-Attention block: : 
 
 $$MaskedSelfAttention(Q_{d}, K_{d}, V_{d}) = softmax(\frac{Q_{d}K_{d}^{T}}{\sqrt{d_k}} + M_d^{P} + M^{C})V_{d}$$
-$M_d^{P} = M_d^{left} + M_d^{right}$ that is $M_d^{left} = M_d^{right}^T$
+$M_d^{P} = M_d^{left} + M_d^{right}$ that is $\leftindex^left{M_d} = \leftindex^right{M_d}^T$
 #### - Encoder-Decoder Cross-Attention block: 
 
 $$CrossAttention(Q_{d}, K_{e}, V_{e}) = softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right})V_{e}$$
