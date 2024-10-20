@@ -580,7 +580,8 @@ $$softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} + M_e^{right})V_e = sof
 Using the decoder's input padding mask would create dirty values. Hence, using the right encoder's input padding mask is the best choice. 
 Not using any padding mask for the Cross-Attention block would create dirty values. 
 
-Just to experimentally validate this assertion I trained a simple Transformer model and I found that with the right padding mask for the Cross-Attention block leads to better validation accuracy.
+Just to experimentally validate this assertion I trained a simple Transformer model and I found that with the right padding mask for the Cross-Attention block leads to better validation accuracy respect to not using any.
+(7.154 vs 7.3 of Validation loss after 1 epoch)
 
 ## Padding Mask Usage Recap:
 
