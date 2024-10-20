@@ -423,12 +423,7 @@ $$Q_d = \begin{bmatrix}
     \end{bmatrix};$$
 
 
-$$Q_dK_e^T = \begin{bmatrix} 4 & 5 & 6 & 7 & 1*[null_e] & 1*[null_e]\\\
- 8 & 10 & 12 & 14 & 2*[null_e] & 2*[null_e] \\\
- 12 & 15 & 18 & 21 & 3*[null_e] & 3*[null_e] \\\
- [null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & [null_d]*[null_e] & [null_d]*[null_e] \\\
-[null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & [null_d]*[null_e] & [null_d]*[null_e]  \\\
-[null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & [null_d]*[null_e] & [null_d]*[null_e] 
+$$Q_dK_e^T = \begin{bmatrix} 4 & 5 & 6 & 7 
 \end{bmatrix}$$
 
 Where $null_d$ or $null_e$ represent the values in the vector correspondent to the padding values of decoder and encoder respectively.
