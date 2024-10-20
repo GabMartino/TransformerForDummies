@@ -599,7 +599,7 @@ Just to experimentally validate this assertion I trained a simple Transformer mo
 
 $$SelfAttention(Q_{e}, K_{e}, V_{e}) = softmax(\frac{Q_{e}K_{e}^{T}}{\sqrt{d_k}} + M_e^{P})V_{e}$$
 
-$M_e^{P} = M_e^{left} + M_e^{right}$ that is $M_e^{left} = M_e^{right}^T$
+$M_e^{P} = M_e^{left} + M_e^{right}$ that is $M_e^{left} = M_e^{right^T}$
 #### - Decoder MASKED Self-Attention block: : 
 
 $$MaskedSelfAttention(Q_{d}, K_{d}, V_{d}) = softmax(\frac{Q_{d}K_{d}^{T}}{\sqrt{d_k}} + M_d^{P} + M^{C})V_{d}$$
