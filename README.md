@@ -418,10 +418,9 @@ $$Q_d = \begin{bmatrix}
     5 \\\
     6 \\\
     7 \\\
-    [null_d] \\\
-    [null_d]
-    \end{bmatrix};
-$$
+    [null_e] \\\
+    [null_e]
+    \end{bmatrix};$$
 
 $$Q_dK_e^T = \begin{bmatrix} 4 & 5 & 6 & 7 & 1*[null_e] & 1*[null_e] \\\
  8 & 10 & 12 & 14 & 2*[null_e] & 2*[null_e] \\\
@@ -454,8 +453,8 @@ $$M_d^{left} = \begin{bmatrix} 0 & 0 & 0 & 0 & 0 & 0\\\
 -inf & -inf & -inf & -inf & -inf & -inf 
 \end{bmatrix}
 $$
-$$
-    M_d^{left} +  M_e^{right}  = \begin{bmatrix} 0 & 0 & 0 & 0 & -inf & -inf\\\
+
+$$M_d^{left} +  M_e^{right}  = \begin{bmatrix} 0 & 0 & 0 & 0 & -inf & -inf\\\
  0 & 0 & 0 & 0 & -inf & -inf\\\
 0 & 0 & 0 & 0 & -inf & -inf \\\
 -inf & -inf & -inf & -inf & -inf & -inf  \\\
@@ -468,8 +467,7 @@ Ok, now let's apply the three possibilities, and see what happens.
 
 #### Right Encoder's input padding mask
 
-$$
-\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right}  = \begin{bmatrix} 4 & 5 & 6 & 7 & -inf & -inf \\\
+$$\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right}  = \begin{bmatrix} 4 & 5 & 6 & 7 & -inf & -inf \\\
  8 & 10 & 12 & 14 & -inf & -inf \\\
  12 & 15 & 18 & 21 & -inf & -inf \\\
  [null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & -inf & -inf \\\
@@ -477,8 +475,8 @@ $$
 [null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & -inf & -inf 
 \end{bmatrix}
 $$
-$$
-softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right})V_e = \begin{bmatrix} 0.0321 & 0.0871 & 0.2369 & 0.6439 & 0 & 0 \\\
+
+$$softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right})V_e = \begin{bmatrix} 0.0321 & 0.0871 & 0.2369 & 0.6439 & 0 & 0 \\\
 0.0021 & 0.0158 & 0.1171 & 0.8650 & 0 & 0 \\\
  1.1727e-04 &  2.3554e-03 & 4.7309e-02 & 9.5022e-01 & 0 & 0\\\
  w_1^{null} & w_2^{null} & w_3^{null} & w_4^{null} & 0 & 0 \\\
@@ -505,8 +503,8 @@ Where $w_x^{null}$ represent a weight from a non-relevant position and $W_x^{nul
 As it is possible to see the output vector contains and the end some values that represent the padding.
 Let's continue with the example computation of the other cases.
 #### Left Decoder's input padding mask
-$$
-\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} = \begin{bmatrix} 4 & 5 & 6 & 7 & 1*[null_e] & 1*[null_e] \\\
+
+$$\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} = \begin{bmatrix} 4 & 5 & 6 & 7 & 1*[null_e] & 1*[null_e] \\\
  8 & 10 & 12 & 14 & 2*[null_e] & 2*[null_e] \\\
  12 & 15 & 18 & 21 & 3*[null_e] & 3*[null_e] \\\
 -inf & -inf & -inf & -inf & -inf & -inf  \\\
@@ -514,8 +512,8 @@ $$
 -inf & -inf & -inf & -inf & -inf & -inf 
 \end{bmatrix}
 $$
-$$
-softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} )V_e = \begin{bmatrix} w_1^{dirty} & w_2^{dirty} & w_3^{dirty} & w_4^{dirty} & w_5^{null} & w_6^{null} \\\
+
+$$softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} )V_e = \begin{bmatrix} w_1^{dirty} & w_2^{dirty} & w_3^{dirty} & w_4^{dirty} & w_5^{null} & w_6^{null} \\\
 w_1^{dirty} & w_2^{dirty} & w_3^{dirty} & w_4^{dirty} & w_5^{null} & w_6^{null} \\\
 w_1^{dirty} & w_2^{dirty} & w_3^{dirty} & w_4^{dirty} & w_5^{null} & w_6^{null} \\\
 0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666  \\\
