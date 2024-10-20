@@ -423,7 +423,7 @@ $$Q_d = \begin{bmatrix}
     \end{bmatrix};$$
 
 
-$$Q_dK_e^T = \begin{bmatrix} 4 & 5 & 6 & 7 & 1 * [null_e] & 1 * [null_e]\\\
+$$Q_dK_e^T = \begin{bmatrix} 4 & 5 & 6 & 7 & [null_e] & [null_e] \\\
 
 \end{bmatrix}$$
 
