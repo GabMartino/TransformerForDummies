@@ -3,7 +3,6 @@
 import torch
 
 
-
 def create_random_padding_mask(batch_size, seq_len):
     '''
        Create a random padding mask
@@ -15,14 +14,10 @@ def create_random_padding_mask(batch_size, seq_len):
     for i in range(batch_size):
         padding_mask[i, padding_start_indeces[i]:] = True
 
-
-    padding_mask = padding_mask.float()
+    padding_mask_right = padding_mask.repeat(1, seq_len, 1)
+    padding_mask_left = padding_mask_right.transpose(-1, -2)
+    padding_mask = (padding_mask_left | padding_mask_right).float()
     padding_mask[padding_mask == 1.] = -torch.inf
-    padding_mask = padding_mask.unsqueeze(1).repeat(1, seq_len, 1)
-    i, j = torch.triu_indices(seq_len, seq_len)
-    vals = padding_mask[:, i, j]
-    padding_mask = padding_mask.transpose(-2, -1)
-    padding_mask[:, i, j] = vals
     return padding_mask
 
 
@@ -39,6 +34,8 @@ def token_to_text(tokenized_sentence, vocabulary):
         word = inv_map.get(token, "[UNK]")
         sentence.append(word)
     return sentence
+
+
 def main():
     batch_size = 1
     seq_len = 5

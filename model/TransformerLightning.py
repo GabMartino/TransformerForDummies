@@ -38,10 +38,10 @@ class TransformerLightning(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         source_batch, source_mask, target_batch, target_mask = batch
-        x = self.model(x=source_batch,
-                       y=target_batch,
-                       source_mask=source_mask,
-                       target_mask=target_mask)
+        x = self.model(encoder_input=source_batch,
+                       decoder_input=target_batch,
+                       source_mask_keys=source_mask,
+                       target_mask_keys=target_mask)
         '''
             To implement the shift right:
             1. Roll the target batch to the left 
@@ -64,10 +64,10 @@ class TransformerLightning(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         source_batch, source_mask, target_batch, target_mask = batch
-        x = self.model(x=source_batch,
-                       y=target_batch,
-                       source_mask=source_mask,
-                       target_mask=target_mask)
+        x = self.model(encoder_input=source_batch,
+                       decoder_input=target_batch,
+                       source_mask_keys=source_mask,
+                       target_mask_keys=target_mask)
         target_batch_out = torch.roll(target_batch, -1, dims=-1)
         target_batch_out[:, -1] = self.ignore_index
         target_batch_out = target_batch_out.reshape(-1)

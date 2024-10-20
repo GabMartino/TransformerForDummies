@@ -1,3 +1,4 @@
+from torchvision.models.detection.roi_heads import paste_mask_in_image
 
 # TransformerForDummies :rocket:
 When I started to study the Transformer model, I found that some important details of the model implementation were not totally clear 
@@ -274,30 +275,7 @@ Recap:
   - Aligning the sequences for the same batch;
   - Aligning the sequences for between the two batches of encoder and decoder (depends on the implementation).
 
-### 3) Ok, but the Transformer has 3 attention blocks in which one I should insert the padding mask?
-
-Reporting the same paragraph above:
-
-<p align="center">
-<img src="./assets/paragraph_1.jpg" alt="Paragraph" width="90%"/>
-</p>
-
-The sentence "*This allows every
-position in the decoder to attend over all positions in the input sequence*" can be interpreted that since the encoder sequence has already gone through a processing,
-it is possible to use all the embeddings vectors in the case of the Cross-Attention, so no padding mask in this case. Furthermore, in the Self-Attention blocks for both Encoder and Decoder,
-seems natural the usage instead.
-
-Finally a small recap:
-
-#### - **Encoder Self-Attention block wants: PADDING MASK**
-#### - **Decoder MASKED Self-Attention block wants: PADDING MASK + CAUSAL MASK**
-#### - **Encoder-Decoder Cross-Attention block wants: NO PADDING**
-
-<p align="center">
-<img src="./assets/Transformer_architecture_modified.jpg" alt="Transformer Architecture with masks annotated" width="50%"/>
-</p>
-
-### 4) How is done the Padding Mask? and how is employed?
+### 4) What is the shape of the Padding Mask? How is it employed?
 
 First, if we want to talk about Padding mask we need to consider the Batch size > 1 that we'll name $B$. Hence, $Q \in \mathbb{R}^{B \times L \times E}, K \in \mathbb{R}^{B \times L \times E}, V \in \mathbb{R}^{B \times L \times E}$, $L$ is the sequence lenght and $E$ is the embedding size.
 
@@ -367,18 +345,248 @@ It's easy to derive this mask with these operations:
 ```python
 B = 1
 L = 6
-padding_mask = torch.FloatTensor([0, 0, 0, 0, -torch.inf, -torch.inf]).unsqueeze(0).unsqueeze(0)
-padding_mask = padding_mask.repeat(1, L, 1)
-i, j = torch.triu_indices(L, L)
-vals = padding_mask[:, i, j]
-padding_mask = padding_mask.transpose(-2, -1)
-padding_mask[:, i, j] = vals
+padding_mask = torch.FloatTensor([False, False, False, False, True, True]).unsqueeze(0).unsqueeze(0)
+padding_mask_right = padding_mask.repeat(1, L, 1)
+padding_mask_left = padding_mask_right.transpose(-1, -2)
+padding_mask = (padding_mask_left | padding_mask_right).float()
+padding_mask[padding_mask == 1.] = -torch.inf
 ```
 but I'm pretty sure more efficient ways exists.
 
 Hence, we'll have a different padding mask for each sentence. 
 
 $$M^{P} = \[ M^{P}_1, ..., M^{P}_B \]$$
+
+### 3) Ok, but the Transformer has 3 attention blocks in which one I should insert the padding mask?
+
+This is probably one of the hardest question I had to find an answer to. Let's start from the most trivial things. The Masked-Self-Attention block of course needs the Causal Mask, and that's ok. However, the most reasonable thing is that both the Self-attention block of the encoder, and Masked-Self-Attention block of the Decoder, also need a Padding Mask.
+This is because as reported in the article:
+
+- _"The encoder contains self-attention layers. In a self-attention layer all of the keys, values
+and queries come from the same place, in this case, the output of the previous layer in the
+encoder. Each position in the encoder **can attend to all positions** in the previous layer of the
+encoder."_
+- _"Similarly, self-attention layers in the decoder allow each position in the decoder **to attend to
+all positions** in the decoder up to and including that position. We need to prevent leftward
+information flow in the decoder to preserve the auto-regressive property. We implement this
+inside of scaled dot-product attention by masking out (setting to −∞) all values in the input
+of the softmax which correspond to illegal connections. See Figure 2"_
+
+When in the article is mentioned that the self-attention blocks should attend to "all the positions", it's reasonable to think that only the meaningful part should be attended, so excluding the padding token. 
+Hence, until now we have: Encoder's Self-Attention block needs the Padding Mask; the Decoder's Masked-Self-Attention block needs Padding Mask + Causal Mask.
+
+#### Perfect! **But what about the Cross-Attention block in the decoder?** 
+
+The article reports:
+
+<p align="center">
+<img src="./assets/paragraph_1.jpg" alt="Paragraph" width="90%"/>
+</p>
+
+So, if we need to consider the same rational where "all the positions" means all the meaningful positions, Do we need to combine two! padding masks??,
+the encoder and the decoder one, also considering that Queries come from the decoder and the Keys from the encoder ??. However, since I didn't want to speculate much, I needed to investigate more.
+
+First of all, I found that the same question has been asked a lot around the web, but few time I've seen a reasonable answer: [HERE](https://medium.com/@sxyxiaoyao/i-have-a-question-about-this-line-code-why-we-need-memory-mask-in-decoder-ab7d5a9e8060) [HERE](https://github.com/pytorch/pytorch/issues/124931) [HERE](https://stackoverflow.com/questions/62170439/difference-between-src-mask-and-src-key-padding-mask) [HERE](https://medium.com/@bavalpreetsinghh/transformer-from-scratch-using-pytorch-28a5d1b2e033) [HERE](https://datascience.stackexchange.com/questions/65067/proper-masking-in-the-transformer-model) [HERE](https://datascience.stackexchange.com/questions/88097/why-do-transformers-mask-at-every-layer-instead-of-just-at-the-input-layer) [HERE](https://ai.stackexchange.com/questions/25041/is-the-decoder-mask-triangular-mask-applied-only-in-the-first-decoder-block-o)
+Unfortunately, not all the answer were clear and agreed to each other. In spite of this, I tried to have my own answer as an average of what I found, mainly based on these factors:
+
+- The official Pytorch Implementation of the Transformer model has as parameter the **_memory_mask_** [HERE](https://pytorch.org/docs/stable/generated/torch.nn.Transformer.html)
+- [This article](https://medium.com/@bavalpreetsinghh/transformer-from-scratch-using-pytorch-28a5d1b2e033) reports that it is necessary to avoid conflict.
+- [This](https://stackoverflow.com/questions/62170439/difference-between-src-mask-and-src-key-padding-mask) instead reports that the memory mask is just the same as the encoder-input's padding mask, so in general applied to the Keys.
+
+Ok, my catch on this is: The Cross-Attention block needs a Padding Mask; In the official implementations there is what is called Memory Mask that seems to be a copy of the encoder's input padding mask; I haven't found anything about the inclusion of the decoder's input padding mask.
+
+However, I wasn't satisfied with this. I had to prove the sense by myself. $Q_d \in \mathbb{R}^{L_2 \times E}, K_e^T \in \mathbb{R}^{E \times L_1}, V_e \in \mathbb{R}^{L_1 \times E}$ with $E = 1$
+
+$$
+    Q_d = \begin{bmatrix}
+    1\\\
+    2 \\\
+    3 \\\
+    [null_d] \\\
+    [null_d] \\\
+    [null_d]
+    \end{bmatrix}; K_e^T = \begin{bmatrix} 4 & 5 & 6 & 7 & [null_e] & [null_e]\end{bmatrix};  V_e = \begin{bmatrix}
+    4\\\
+    5 \\\
+    6 \\\
+    7 \\\
+    [null_d] \\\
+    [null_d]
+    \end{bmatrix};
+$$
+
+$$ Q_dK_e^T = \begin{bmatrix} 4 & 5 & 6 & 7 & 1*[null_e] & 1*[null_e] \\\
+ 8 & 10 & 12 & 14 & 2*[null_e] & 2*[null_e] \\\
+ 12 & 15 & 18 & 21 & 3*[null_e] & 3*[null_e] \\\
+ [null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & [null_d]*[null_e] & [null_d]*[null_e] \\\
+[null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & [null_d]*[null_e] & [null_d]*[null_e]  \\\
+[null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & [null_d]*[null_e] & [null_d]*[null_e] 
+\end{bmatrix}
+$$
+
+Where $null_d$ or $null_e$ represent the values in the vector correspondent to the padding values of decoder and decoder respectively.
+
+Now let's consider the three possibilities for the padding mask: encoder's input padding mask, decoder's input padding mask, combination of both.
+More precisely, since the computation of the $Q_dK_e^T$ have the query from the decoder and the keys from the encoder, we'll call  the "left decoder's input padding mask" and "right encoder's input padding mask" respectively.
+$$
+    M_e^{right} = \begin{bmatrix} 0 & 0 & 0 & 0 & -inf & -inf\\\
+ 0 & 0 & 0 & 0 & -inf & -inf \\\
+0 & 0 & 0 & 0 & -inf & -inf \\\
+0 & 0 & 0 & 0 & -inf & -inf \\\
+0 & 0 & 0 & 0 & -inf & -inf \\\
+0 & 0 & 0 & 0 & -inf & -inf 
+\end{bmatrix}
+$$
+$$
+    M_d^{left} = \begin{bmatrix} 0 & 0 & 0 & 0 & 0 & 0\\\
+ 0 & 0 & 0 & 0 & 0 & 0 \\\
+0 & 0 & 0 & 0 & 0 & 0 \\\
+-inf & -inf & -inf & -inf & -inf & -inf  \\\
+-inf & -inf & -inf & -inf & -inf & -inf  \\\
+-inf & -inf & -inf & -inf & -inf & -inf 
+\end{bmatrix}
+$$
+$$
+    M_d^{left} +  M_e^{right}  = \begin{bmatrix} 0 & 0 & 0 & 0 & -inf & -inf\\\
+ 0 & 0 & 0 & 0 & -inf & -inf\\\
+0 & 0 & 0 & 0 & -inf & -inf \\\
+-inf & -inf & -inf & -inf & -inf & -inf  \\\
+-inf & -inf & -inf & -inf & -inf & -inf  \\\
+-inf & -inf & -inf & -inf & -inf & -inf 
+\end{bmatrix}
+$$
+
+Ok, now let's apply the three possibilities, and see what happens.
+
+#### Right Encoder's input padding mask
+
+$$
+\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right}  = \begin{bmatrix} 4 & 5 & 6 & 7 & -inf & -inf \\\
+ 8 & 10 & 12 & 14 & -inf & -inf \\\
+ 12 & 15 & 18 & 21 & -inf & -inf \\\
+ [null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & -inf & -inf \\\
+[null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & -inf & -inf  \\\
+[null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & -inf & -inf 
+\end{bmatrix}
+$$
+$$
+softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right})V_e = \begin{bmatrix} 0.0321 & 0.0871 & 0.2369 & 0.6439 & 0 & 0 \\\
+0.0021 & 0.0158 & 0.1171 & 0.8650 & 0 & 0 \\\
+ 1.1727e-04 &  2.3554e-03 & 4.7309e-02 & 9.5022e-01 & 0 & 0\\\
+ w_1^{null} & w_2^{null} & w_3^{null} & w_4^{null} & 0 & 0 \\\
+w_5^{null} & w_6^{null} & w_7^{null} & w_8^{null} & 0 & 0   \\\
+w_9^{null} & w_{10}^{null} & w_{11}^{null} & w_{12}^{null} & 0 & 0 
+\end{bmatrix}* \begin{bmatrix}
+    4\\\
+    5 \\\
+    6 \\\
+    7 \\\
+    [null_d] \\\
+    [null_d]
+    \end{bmatrix} \\
+ = \begin{bmatrix} 6.4926 \\\
+6.845 \\\
+6.9476 \\\
+W_1^{null} \\\
+W_2^{null} \\\
+W_3^{null}
+\end{bmatrix}
+$$
+
+Where $w_x^{null}$ represent a weight from a non-relevant position and $W_x^{null}$ represent a dot product out of a matrix multiplication that contains some $w_x^{null}$ values.
+As it is possible to see the output vector contains and the end some values that represent the padding.
+Let's continue with the example computation of the other cases.
+#### Left Decoder's input padding mask
+$$
+\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} = \begin{bmatrix} 4 & 5 & 6 & 7 & 1*[null_e] & 1*[null_e] \\\
+ 8 & 10 & 12 & 14 & 2*[null_e] & 2*[null_e] \\\
+ 12 & 15 & 18 & 21 & 3*[null_e] & 3*[null_e] \\\
+-inf & -inf & -inf & -inf & -inf & -inf  \\\
+-inf & -inf & -inf & -inf & -inf & -inf  \\\
+-inf & -inf & -inf & -inf & -inf & -inf 
+\end{bmatrix}
+$$
+$$
+softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} )V_e = \begin{bmatrix} w_1^{dirty} & w_2^{dirty} & w_3^{dirty} & w_4^{dirty} & w_5^{null} & w_6^{null} \\\
+w_1^{dirty} & w_2^{dirty} & w_3^{dirty} & w_4^{dirty} & w_5^{null} & w_6^{null} \\\
+w_1^{dirty} & w_2^{dirty} & w_3^{dirty} & w_4^{dirty} & w_5^{null} & w_6^{null} \\\
+0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666  \\\
+0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666  \\\
+0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666 
+\end{bmatrix} * \begin{bmatrix}
+    4\\\
+    5 \\\
+    6 \\\
+    7 \\\
+    [null_d] \\\
+    [null_d]
+    \end{bmatrix} = \begin{bmatrix} W_1^{dirty} \\\
+W_2^{dirty} \\\
+W_3^{dirty} \\\
+W_4^{null} \\\
+W_5^{null} \\\
+W_6^{null}
+\end{bmatrix}
+$$
+
+Here I called $w_x^{dirty}$ the weights values out of the softmax computed also using some values from the padding positions. 
+As it is possible to see the output in this case is composed by "dirty" values and null values.
+
+Finally, the combination of both the padding masks.
+#### Both Encoder's and  Decoder's input padding mask
+
+$$
+\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} + M_e^{right} = \begin{bmatrix} 4 & 5 & 6 & 7 & -inf & -inf \\\
+ 8 & 10 & 12 & 14 & -inf & -inf \\\
+ 12 & 15 & 18 & 21 & -inf & -inf \\\
+-inf & -inf & -inf & -inf & -inf & -inf  \\\
+-inf & -inf & -inf & -inf & -inf & -inf  \\\
+-inf & -inf & -inf & -inf & -inf & -inf 
+\end{bmatrix}
+$$
+$$
+softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} + M_e^{right})V_e = \begin{bmatrix} 0.0321 & 0.0871 & 0.2369 & 0.6439 & 0 & 0 \\\
+0.0021 & 0.0158 & 0.1171 & 0.8650 & 0 & 0 \\\
+ 1.1727e-04 &  2.3554e-03 & 4.7309e-02 & 9.5022e-01 & 0 & 0\\\
+0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666  \\\
+0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666  \\\
+0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666 
+\end{bmatrix} * \begin{bmatrix}
+    4\\\
+    5 \\\
+    6 \\\
+    7 \\\
+    [null_d] \\\
+    [null_d]
+    \end{bmatrix} = \begin{bmatrix} 6.4926 \\\
+6.845 \\\
+6.9476 \\\
+W_1^{null} \\\
+W_2^{null} \\\
+W_3^{null}
+\end{bmatrix}
+$$
+
+### Finally we have our answer!
+First!
+$$
+softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} + M_e^{right})V_e = softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right})V_e
+$$
+Using the decoder's input padding mask would create dirty values. Hence, using the right encoder's input padding mask is the best choice. 
+Not using any padding mask for the Cross-Attention block would create dirty values. 
+
+Just to experimentally validate this assertion I trained a simple Transformer model and I found that with the right padding mask for the Cross-Attention block leads to better validation accuracy.
+
+## Padding Mask Usage Recap:
+
+#### - **Encoder Self-Attention block wants: ENCODER'S INPUT PADDING MASK**
+#### - **Decoder MASKED Self-Attention block wants: DECODER'S INPUT PADDING MASK + CAUSAL MASK**
+#### - **Encoder-Decoder Cross-Attention block wants: ENCODER'S INPUT PADDING MASK**
+
+<p align="center">
+<img src="./assets/Padding%20Masks.png" alt="Transformer Architecture with masks annotated" width="50%"/>
+</p>
+
 
 ### Recap for the Masking
 
@@ -454,7 +662,7 @@ So, in this case all the three layer share the same weights as reported in the a
 
 Ok, let's continue to read:
 
-- * **[...] In the embedding layers, we multiply those weights by $\sqrt{d_{model}}$.** * 
+- **[...] In the embedding layers, we multiply those weights by $\sqrt{d_{model}}$.** 
 
 ...Totally out of nowhere...why now???:weary:
 
@@ -579,6 +787,6 @@ Of course other faster ways to implement this are possible.
 
 ## References
 
-- [Attention is All You Need] (https://arxiv.org/abs/1706.03762)
-- [Illustrated Transformer] (https://jalammar.github.io/illustrated-transformer/)
-- [The Annotated Transformer] ( https://nlp.seas.harvard.edu/2018/04/03/attention.html)
+- [Attention is All You Need](https://arxiv.org/abs/1706.03762)
+- [Illustrated Transformer](https://jalammar.github.io/illustrated-transformer/)
+- [The Annotated Transformer]( https://nlp.seas.harvard.edu/2018/04/03/attention.html)

@@ -44,12 +44,13 @@ class Transformer(nn.Module):
         self.positional_encoding = PositionalEncoding(config.embedding_size)
         self.dropout = nn.Dropout(config.dropout)
 
-    def forward(self, x,  y, source_mask = None,target_mask = None):
-        source_embedding = self.source_embedding(x)
+
+    def forward(self, encoder_input,  decoder_input, source_mask_keys = None, target_mask_keys = None, cross_attention_mask=None):
+        source_embedding = self.source_embedding(encoder_input)
         '''
             The output is of shape (batch_size, seq_len, embedding_size)
         '''
-        source_encoding = self.positional_encoding(x)
+        source_encoding = self.positional_encoding(encoder_input)
         '''
            Add positional encoding to the embedding
        '''
@@ -58,15 +59,35 @@ class Transformer(nn.Module):
         '''
             ENCODER
         '''
-        encoder_output = self.encoder(source_embedding, source_mask)
+        #print(encoder_input.shape, source_mask_keys.shape)
+        source_mask_right = source_mask_keys.unsqueeze(1).repeat(1, encoder_input.shape[1], 1)
+        #print(source_mask_right.shape)
+        source_mask_left = source_mask_right.transpose(-1, -2)
+        source_mask = (source_mask_left | source_mask_right).float()
+        source_mask[source_mask == 1.] = -torch.inf
+        encoder_output = self.encoder(x=source_embedding,
+                                      mask=source_mask)
         '''
             DECODER
         '''
-        target_embedding = self.target_embedding(y)
-        target_encoding = self.positional_encoding(y)
+        target_embedding = self.target_embedding(decoder_input)
+        target_encoding = self.positional_encoding(decoder_input)
         target_embedding = target_embedding + target_encoding
         target_embedding = self.dropout(target_embedding)
-        out = self.decoder(x=target_embedding, decoder_mask=target_mask, encoder_output=encoder_output)
+
+        target_mask_right = target_mask_keys.unsqueeze(1).repeat(1, encoder_input.shape[1], 1)
+        target_mask_left = target_mask_right.transpose(-1, -2)
+        target_mask = (target_mask_left | target_mask_right).float()
+        target_mask[target_mask == 1.0] = -torch.inf
+
+
+        #cross_attention_mask = (target_mask_left | source_mask_right).float()
+        #cross_attention_mask = (target_mask_left).float()
+        cross_attention_mask = (source_mask_right).float()
+        #cross_attention_mask = (target_mask_left | source_mask_right).float()
+        cross_attention_mask[cross_attention_mask == 1.] = -torch.inf
+        out = self.decoder(x=target_embedding, decoder_mask=target_mask,
+                           encoder_output=encoder_output, cross_attention_mask=cross_attention_mask)
         '''
             OUTPUT
         '''
@@ -79,14 +100,16 @@ class Transformer(nn.Module):
 def main():
 
     vocab_size = 10000
-    batch_size = 16
-    seq_len = 128
+    batch_size = 1
+    seq_len = 10
 
     config = Config()
+    config.encoder = Config()
     config.encoder.vocab_size = vocab_size
     config.encoder.num_layers = 1
     config.encoder.ff_hidden_size = 512
 
+    config.decoder = Config()
     config.decoder.vocab_size = vocab_size
     config.decoder.num_layers = 1
     config.decoder.ff_hidden_size = 512
@@ -95,13 +118,16 @@ def main():
     config.dropout = 0.1
     config.num_heads = 8
 
+    config.same_source_target_vocabulary = False
+
     x = torch.randint(0, vocab_size, (batch_size, seq_len))
     source_padding_mask = create_random_padding_mask(batch_size, seq_len)
     target_padding_mask = create_random_padding_mask(batch_size, seq_len)
     look_ahead_mask = create_look_ahead_mask(batch_size, seq_len)
 
     transformer = Transformer(config)
-    x = transformer(x, source_mask=source_padding_mask, target_mask=target_padding_mask)
+    y = torch.randint(0, vocab_size, (batch_size, seq_len))
+    x = transformer(x, y=y, source_mask=source_padding_mask, target_mask=target_padding_mask)
     print(x.shape)
 if __name__ == "__main__":
     main()

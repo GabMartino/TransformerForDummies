@@ -17,29 +17,29 @@ maximum_dataset_lenght: 100000
 encoder:
   vocab_size: 10000
   ## Actually not used. Extracted from the dataset
-  num_layers: 2
-  ff_hidden_size: 64
+  num_layers: 1
+  ff_hidden_size: 128
 
 #### DECODER
 decoder:
   vocab_size: 10000
   ## Actually not used. Extracted from the dataset
-  num_layers: 2
-  ff_hidden_size: 64
+  num_layers: 1
+  ff_hidden_size: 128
 
 #### BOTH
 same_source_target_vocabulary: False
 ## If True the embedding layer will be shared between the encoder and decoder, otherwise the encoder layers will be different
 embedding_size: 16
-num_heads: 2
+num_heads: 1
 ignore_index: None ## Extracted from the dataset class
 
 ### TRAINING CONFIG
 checkpoint_dir: "./checkpoints"
 logs_dir: "./logs"
-from_checkpoint: True
-train: False
-test: True
+from_checkpoint: False
+train: True
+test: False
 
 max_epochs: 1
 lr: 1e-3

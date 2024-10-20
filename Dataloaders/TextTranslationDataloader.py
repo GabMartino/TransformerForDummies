@@ -68,15 +68,14 @@ class TextTranslationDatasetOnDemand(torch.utils.data.Dataset):
         return self.max_dataset_lenght
 
     def prepare_sentence(self, raw_sentence, vocabulary):
-        source_sentence = raw_sentence
-        source_sentence.insert(0, vocabulary['[SOS]'])
-        source_sentence.append(vocabulary['[EOS]'])
-        source_padding = [vocabulary['[PAD]']] * (self.max_sentence_len - len(source_sentence))
-        source_sentence += source_padding
-        source_padding_vector = torch.full((len(source_sentence),), 0.0)
-        source_padding_vector[-len(source_padding):] = -torch.inf
-        source_padding_mask = from_padding_vector_to_matrix(source_padding_vector)
-        return source_sentence, source_padding_mask
+        sentence = raw_sentence
+        sentence.insert(0, vocabulary['[SOS]'])
+        sentence.append(vocabulary['[EOS]'])
+        padding = [vocabulary['[PAD]']] * (self.max_sentence_len - len(sentence))
+        sentence += padding
+        padding_mask_keys = torch.full((len(sentence),), False, dtype=torch.bool)
+        padding_mask_keys[-len(sentence):] = True
+        return sentence, padding_mask_keys
 
     def get_next_valid_sentence(self, index, data_path, vocabulary):
         tokenized_sentence = None

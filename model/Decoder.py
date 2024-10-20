@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from model.blocks.LayerNormalization import LayerNormalization
 from model.blocks.MultiHeadAttentionBlock import MultiHeadCrossAttentionBlock, MultiHeadSelfAttentionBlock
-from model.utils.utils import create_look_ahead_mask
+from model.utils.utils import create_look_ahead_mask, create_random_padding_mask
 
 
 class DecoderLayer(nn.Module):
@@ -30,7 +30,7 @@ class DecoderLayer(nn.Module):
         self.layer_norm_2 = LayerNormalization(self.embedding_size)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x, decoder_mask, encoder_output):
+    def forward(self, x, decoder_mask, encoder_output, cross_attention_mask=None):
         residual = x
         '''
             NOTE:
@@ -41,9 +41,8 @@ class DecoderLayer(nn.Module):
         x = self.dropout(x)
         x = self.layer_norm_1(x + residual)
 
-
         residual = x
-        x = self.multihead_cross_attention(encoder_output, x, mask=None) ##check mask
+        x = self.multihead_cross_attention(encoder_output, x, mask=cross_attention_mask) ##check mask
         x = self.dropout(x)
         x = self.layer_norm_2(x + residual)
 
@@ -62,32 +61,34 @@ class Decoder(nn.Module):
 
         self.decoder_layers = nn.ModuleList([DecoderLayer(embedding_size, num_heads, ff_hidden_size, dropout) for _ in range(num_layers)])
 
-    def forward(self, x, decoder_mask, encoder_output):
+    def forward(self, x, decoder_mask, encoder_output, cross_attention_mask=None):
         '''
             The encoder output remains the same for all decoder layers
         '''
         for decoder_layer in self.decoder_layers:
-            x = decoder_layer(x, decoder_mask, encoder_output)
+            x = decoder_layer(x, decoder_mask, encoder_output, cross_attention_mask)
         return x
 
 def main():
-    batch_size = 10
-    seq_len = 100
+    batch_size = 1
+    seq_len = 10
     embedding_size = 376
 
 
     x = torch.randn((batch_size, seq_len, embedding_size))
+    mask = create_random_padding_mask(batch_size, seq_len)
+    print(mask)
     '''
         Test single decoder layer
     '''
     decoder_layer = DecoderLayer(embedding_size, num_heads=8, ff_hidden_size=2048, dropout=0.1)
     encoder_output = torch.randn((batch_size, seq_len, embedding_size)) ## Simulate encoder output
-    x = decoder_layer(x, None, encoder_output)
+    x = decoder_layer(x, mask, encoder_output)
     '''
         Test multi layer decoder 
     '''
     decoder = Decoder(embedding_size, num_heads=8, ff_hidden_size=2048, dropout=0.1, num_layers=5)
-    x = decoder(x, None, encoder_output)
+    x = decoder(x, mask, encoder_output)
     '''
         Test decoder layer with a lookahead mask
     '''
