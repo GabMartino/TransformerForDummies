@@ -424,7 +424,6 @@ $$Q_d = \begin{bmatrix}
 
 
 $$Q_dK_e^T = \begin{bmatrix} 4 & 5 & 6 & 7 & [null_e] & [null_e] \\\
-
 \end{bmatrix}$$
 
 Where $null_d$ or $null_e$ represent the values in the vector correspondent to the padding values of decoder and encoder respectively.
