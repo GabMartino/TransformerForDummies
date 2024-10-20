@@ -422,7 +422,8 @@ $$Q_d = \begin{bmatrix}
     [null_e]
     \end{bmatrix};$$
 
-$$Q_dK_e^T = \begin{bmatrix} 4 & 5 & 6 & 7 & 1*[null_e] & 1*[null_e] \\\
+
+$$Q_dK_e^T = \begin{bmatrix} 4 & 5 & 6 & 7 & 1*[null_e] & 1*[null_e]\\\
  8 & 10 & 12 & 14 & 2*[null_e] & 2*[null_e] \\\
  12 & 15 & 18 & 21 & 3*[null_e] & 3*[null_e] \\\
  [null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & [null_d]*[null_e] & [null_d]*[null_e] \\\
@@ -603,7 +604,7 @@ $M_e^{P} = M_e^{left} + M_e^{right}$ that is $M_e^{left} = M_e^{right^T}$
 #### - Decoder MASKED Self-Attention block: : 
 
 $$MaskedSelfAttention(Q_{d}, K_{d}, V_{d}) = softmax(\frac{Q_{d}K_{d}^{T}}{\sqrt{d_k}} + M_d^{P} + M^{C})V_{d}$$
-$M_d^{P} = M_d^{left} + M_d^{right}$ that is $\leftindex^left{M_d} = \leftindex^right{M_d}^T$
+$M_d^{P} = M_d^{left} + M_d^{right}$ that is $M_d^{left} = M_d^{right^T}$
 #### - Encoder-Decoder Cross-Attention block: 
 
 $$CrossAttention(Q_{d}, K_{e}, V_{e}) = softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right})V_{e}$$
