@@ -500,8 +500,8 @@ W_3^{null}
 $$
 
 Where $w_x^{null}$ represent a weight from a non-relevant position and $W_x^{null}$ represent a dot product out of a matrix multiplication that contains some $w_x^{null}$ values.
-As it is possible to see the output vector contains and the end some values that represent the padding.
-Let's continue with the example computation of the other cases.
+As it is possible to see the output vector contains at the end some values that represent the padding.
+
 #### Left Decoder's input padding mask
 
 $$\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} = \begin{bmatrix} 4 & 5 & 6 & 7 & 1*[null_e] & 1*[null_e] \\\
@@ -575,9 +575,9 @@ $$
 
 ### Finally we have our answer!
 First!
-$$
-softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} + M_e^{right})V_e = softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right})V_e
-$$
+
+$$softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} + M_e^{right})V_e = softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right})V_e$$
+
 Using the decoder's input padding mask would create dirty values. Hence, using the right encoder's input padding mask is the best choice. 
 Not using any padding mask for the Cross-Attention block would create dirty values. 
 
@@ -590,7 +590,7 @@ Just to experimentally validate this assertion I trained a simple Transformer mo
 #### - **Encoder-Decoder Cross-Attention block wants: ENCODER'S INPUT PADDING MASK**
 
 <p align="center">
-<img src="./assets/Padding%20Masks.png" alt="Transformer Architecture with masks annotated" width="50%"/>
+<img src="./assets/Padding_Masks.png" alt="Transformer Architecture with masks annotated" width="50%"/>
 </p>
 
 
