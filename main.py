@@ -91,7 +91,8 @@ def main(cfg):
         tokenized_sentence = torch.LongTensor(tokenized_sentence, device="cpu").unsqueeze(0)
         decoder_input = torch.LongTensor(decoder_input, device="cpu").unsqueeze(0)
         while True:
-            out = model(x=tokenized_sentence, y=decoder_input)
+            out = model(encoder_input=tokenized_sentence,
+                        decoder_input=decoder_input)
             out = torch.argmax(torch.softmax(out, dim=-1)) ## I'm just using the argmax, i'm not sampling
             decoder_input = torch.cat([decoder_input, out.unsqueeze(0).unsqueeze(0)], dim=-1)
             if out == datamodule.dataset.target_vocabulary["[EOS]"]:

@@ -37,9 +37,9 @@ ignore_index: None ## Extracted from the dataset class
 ### TRAINING CONFIG
 checkpoint_dir: "./checkpoints"
 logs_dir: "./logs"
-from_checkpoint: False
-train: True
-test: False
+from_checkpoint: True
+train: False
+test: True
 
 max_epochs: 1
 lr: 1e-3
