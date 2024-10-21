@@ -81,35 +81,35 @@ Here we report the shape of the "Don't look ahead mask" also called "Causal Mask
 $M^C \in \mathbb{R}^{L x L}$
 
 $$M^C = \begin{bmatrix} 
-0 & -inf & -inf &  -inf & -inf &  -inf  \\\
-0 & 0 & -inf & -inf & -inf & -inf \\\
-0 & 0 & 0 & -inf & -inf & -inf \\\
-0 & 0 & 0 & 0 & -inf & -inf \\\
-0 & 0 & 0 & 0 & 0 & -inf \\\
+0 & -\infty & -\infty &  -\infty & -\infty &  -\infty  \\\
+0 & 0 & -\infty & -\infty & -\infty & -\infty \\\
+0 & 0 & 0 & -\infty & -\infty & -\infty \\\
+0 & 0 & 0 & 0 & -\infty & -\infty \\\
+0 & 0 & 0 & 0 & 0 & -\infty \\\
 0 & 0 & 0 & 0 & 0 & 0 
 \end{bmatrix}
 $$
 
 Notice that size of the mask is $L \times L$ that is the lenght of the sentence. 
 
-The matrix is composed by zeros and $-inf$, we'll see in a moment why.
+The matrix is composed by zeros and $-\infty$, we'll see in a moment why.
 
 ### **The computation of the masked attention is then**:
 
 
 $$
-    Attention(Q, K, V) = softmax\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M^C\bigg)V
+    Attention(Q, K, V) = \mathop{\text{Softmax}}\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M^C\bigg)V
 $$
 
 Notice the mask is inside the softmax function.
 
 This is done because if we consider $Q \in \mathbb{R}^{L \times 1}, K \in \mathbb{R}^{L \times 1}, V \in \mathbb{R}^{L \times 1}$. We would have $QK^{T} \in \mathbb{R}^{L \times L}$
 
-Now, **the softmax function is applied row-wise**, this is just because the later multiplication with $V$ is on the right-hand side.
+Now, **the \mathop{\text{Softmax}} function is applied row-wise**, this is just because the later multiplication with $V$ is on the right-hand side.
 
-Remind that $softmax(x_i) = \frac{e^{x_i}}{\sum_i e^{x_i}}$, where the $x_i$ is in a set $X = {x_1, x_2, ..., x_n}$, this function just reweights the value to be summed to 1.
+Remind that $\mathop{\text{Softmax}}(x_i) = \frac{e^{x_i}}{\sum_i e^{x_i}}$, where the $x_i$ is in a set $X = {x_1, x_2, ..., x_n}$, this function just reweights the value to be summed to 1.
 
-Hence, when the value is $-inf$ the softmax gives a weight of $0$ that means "don't consider this value".
+Hence, when the value is $-\infty$ the softmax gives a weight of $0$ that means "don't consider this value".
 
 With an example everything is always clearer!
 
@@ -146,21 +146,21 @@ $$\frac{QK^{T}}{\sqrt{d_k}} = \begin{bmatrix} 1 & 2 & 3 & 4 & 5 & 6 \\\
 \end{bmatrix}$$
 
 $$\frac{QK^{T}}{\sqrt{d_k}} + M^C = \begin{bmatrix} 
-1 & -inf & -inf & -inf & -inf &  -inf  \\\
-2 & 4 & -inf & -inf & -inf & -inf \\\
-3 & 6 & 9 & -inf & -inf & -inf \\\
-4 & 8 & 12 & 16 & -inf &  -inf\\\
-5 & 10 & 15 & 20 & 25 & -inf  \\\
+1 & -\infty & -\infty & -\infty & -\infty &  -\infty  \\\
+2 & 4 & -\infty & -\infty & -\infty & -\infty \\\
+3 & 6 & 9 & -\infty & -\infty & -\infty \\\
+4 & 8 & 12 & 16 & -\infty &  -\infty\\\
+5 & 10 & 15 & 20 & 25 & -\infty  \\\
 6 & 12 & 18 & 24 & 30 & 36 
 \end{bmatrix}$$
 
 Now we need to apply the **softmax function ROW-WISE**. Why row-wise? because remember that we are using column vectors:
-$Q = K = V \in \mathbb{R}^{L \times 1}$ for this reason after the softmax we have $softmax(\frac{QK^T}{\sqrt{d_k}}) \in \mathbb{R}^{L \times L}$ that multiplied by $V \in \mathbb{R}^{L \times 1}$ we have a new column vector $A \in \mathbb{R}^{L \times 1}$ ( $(L \times L)\ times (L \times 1) = L \times (L \times L) \times 1 = L \times 1$ )
+$Q = K = V \in \mathbb{R}^{L \times 1}$ for this reason after the softmax we have $\mathop{\text{Softmax}}(\frac{QK^T}{\sqrt{d_k}}) \in \mathbb{R}^{L \times L}$ that multiplied by $V \in \mathbb{R}^{L \times 1}$ we have a new column vector $A \in \mathbb{R}^{L \times 1}$ ( $(L \times L)\ times (L \times 1) = L \times (L \times L) \times 1 = L \times 1$ )
 
 
 ### ACHTUNG :anger:
 
-#### 1. The softmax function is numerical unstable for $-inf$. For this reason, we need to modify $-inf$ values in a VERY HIGH NEGATIVE VALUE like -1E15;
+#### 1. The softmax function is numerical unstable for $-\infty$. For this reason, we need to modify $-\infty$ values in a VERY HIGH NEGATIVE VALUE like -1E15;
 #### 2. The softmax function is applied "for each rows"! But remember how Pytorch handles the dimensions!
 
 This could be trivial for the practitioners but it's important to explicate everything (the repo it's called **_TransformerForDummies_** after all :D)
@@ -187,7 +187,7 @@ Using the last dimension! That in our case will be all the whole rows!
 We'll have:
 
 $$
-    Softmax\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M^C\bigg) = \begin{bmatrix} 
+    \mathop{\text{Softmax}}\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M^C\bigg) = \begin{bmatrix} 
 1.0000e+00 & 0 & 0 & 0 & 0 &  0  \\\
 1.1920e-01 & 8.8080e-01 & 0 & 0 & 0 & 0\\\
 2.3556e-03 & 4.7314e-02 & 9.5033e-01 & 0 & 0 & 0\\\
@@ -201,7 +201,7 @@ The sum "for each row" is always 1.0, try to believe!
 
 Finally, we can compute the output values of the attention mechanism:
 
-$$Softmax\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M^C\bigg)V = \begin{bmatrix} 
+$$\mathop{\text{Softmax}}\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M^C\bigg)V = \begin{bmatrix} 
 1.0000e+00 & 0 & 0 & 0 & 0 &  0  \\\
 1.1920e-01 & 8.8080e-01 & 0 & 0 & 0 & 0\\\
 2.3556e-03 & 4.7314e-02 & 9.5033e-01 & 0 & 0 & 0\\\
@@ -253,7 +253,7 @@ This first explains why the embedding size should be equal for the both encoder 
 
 Then, after the attention computation:
 
-$$softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{|E|}})V_{e} \in \mathbb{R}^{(L_2 \times L_1) \times (L_1 \times E)} = \mathbb{R}^{L_2 \times E}$$
+$$\mathop{\text{Softmax}}(\frac{Q_{d}K_{e}^{T}}{\sqrt{|E|}})V_{e} \in \mathbb{R}^{(L_2 \times L_1) \times (L_1 \times E)} = \mathbb{R}^{L_2 \times E}$$
 
 where the pedices $e$ and $d$ denote the encoder and the decoder respectively, since we're talking about the Cross-Attention block.
 So,
@@ -290,7 +290,7 @@ x_{10} & x_{11} & x_{12} & x_{13}] & x_{14} & [PAD]
 Remember that the scaled-dot-product attention function with a generic mask is:
 
 $$
-    Attention(Q, K, V) = softmax(\frac{QK^{T}}{\sqrt{d_k}} + M)V
+    Attention(Q, K, V) = \mathop{\text{Softmax}}(\frac{QK^{T}}{\sqrt{d_k}} + M)V
 $$
 
 for the operation $QK^{T}$ the transposition for the tensor $K$ is done only on the last two dimensions (the batch dim is not considered), so 
@@ -329,12 +329,12 @@ It's easy to see that every position in which we have a multiplication by the pa
 Hence, our padding mask for the third sentence will be:
 
 $$
-    M^{P}_3 = \begin{bmatrix} 0 & 0 & 0 & -inf & -inf & -inf \\\
-0 & 0 & 0 & -inf & -inf & -inf \\\
-0 & 0 & 0 & -inf & -inf & -inf \\\
--inf & -inf & -inf & -inf & -inf & -inf \\\
--inf & -inf & -inf & -inf & -inf & -inf  \\\
--inf & -inf & -inf & -inf & -inf & -inf  
+    M^{P}_3 = \begin{bmatrix} 0 & 0 & 0 & -\infty & -\infty & -\infty \\\
+0 & 0 & 0 & -\infty & -\infty & -\infty \\\
+0 & 0 & 0 & -\infty & -\infty & -\infty \\\
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty \\\
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty  \\\
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty  
 \end{bmatrix}
 $$
 
@@ -435,30 +435,30 @@ Where $null_d$ or $null_e$ represent the values in the vector correspondent to t
 Now let's consider the three possibilities for the padding mask: encoder's input padding mask, decoder's input padding mask, combination of both.
 More precisely, since the computation of the $Q_dK_e^T$ have the query from the decoder and the keys from the encoder, we'll call  the "left decoder's input padding mask" and "right encoder's input padding mask" respectively.
 
-$$M_e^{right} = \begin{bmatrix} 0 & 0 & 0 & 0 & -inf & -inf\\\
- 0 & 0 & 0 & 0 & -inf & -inf \\\
-0 & 0 & 0 & 0 & -inf & -inf \\\
-0 & 0 & 0 & 0 & -inf & -inf \\\
-0 & 0 & 0 & 0 & -inf & -inf \\\
-0 & 0 & 0 & 0 & -inf & -inf 
+$$M_e^{\text {right }} = \begin{bmatrix} 0 & 0 & 0 & 0 & -\infty & -\infty\\\
+ 0 & 0 & 0 & 0 & -\infty & -\infty \\\
+0 & 0 & 0 & 0 & -\infty & -\infty \\\
+0 & 0 & 0 & 0 & -\infty & -\infty \\\
+0 & 0 & 0 & 0 & -\infty & -\infty \\\
+0 & 0 & 0 & 0 & -\infty & -\infty 
 \end{bmatrix}
 $$
 
-$$M_d^{left} = \begin{bmatrix} 0 & 0 & 0 & 0 & 0 & 0\\\
+$$M_d^{\text{left}} = \begin{bmatrix} 0 & 0 & 0 & 0 & 0 & 0\\\
  0 & 0 & 0 & 0 & 0 & 0 \\\
 0 & 0 & 0 & 0 & 0 & 0 \\\
--inf & -inf & -inf & -inf & -inf & -inf  \\\
--inf & -inf & -inf & -inf & -inf & -inf  \\\
--inf & -inf & -inf & -inf & -inf & -inf 
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty  \\\
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty  \\\
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty 
 \end{bmatrix}
 $$
 
-$$M_d^{left} +  M_e^{right}  = \begin{bmatrix} 0 & 0 & 0 & 0 & -inf & -inf\\\
- 0 & 0 & 0 & 0 & -inf & -inf\\\
-0 & 0 & 0 & 0 & -inf & -inf \\\
--inf & -inf & -inf & -inf & -inf & -inf  \\\
--inf & -inf & -inf & -inf & -inf & -inf  \\\
--inf & -inf & -inf & -inf & -inf & -inf 
+$$M_d^{\text{left}} +  M_e^{\text {right }}  = \begin{bmatrix} 0 & 0 & 0 & 0 & -\infty & -\infty\\\
+ 0 & 0 & 0 & 0 & -\infty & -\infty\\\
+0 & 0 & 0 & 0 & -\infty & -\infty \\\
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty  \\\
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty  \\\
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty 
 \end{bmatrix}
 $$
 
@@ -466,16 +466,16 @@ Ok, now let's apply the three possibilities, and see what happens.
 
 #### Right Encoder's input padding mask
 
-$$\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right}  = \begin{bmatrix} 4 & 5 & 6 & 7 & -inf & -inf \\\
- 8 & 10 & 12 & 14 & -inf & -inf \\\
- 12 & 15 & 18 & 21 & -inf & -inf \\\
- [null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & -inf & -inf \\\
-[null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & -inf & -inf  \\\
-[null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & -inf & -inf 
+$$\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{\text {right }}  = \begin{bmatrix} 4 & 5 & 6 & 7 & -\infty & -\infty \\\
+ 8 & 10 & 12 & 14 & -\infty & -\infty \\\
+ 12 & 15 & 18 & 21 & -\infty & -\infty \\\
+ [null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & -\infty & -\infty \\\
+[null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & -\infty & -\infty  \\\
+[null_d]*4 & [null_d]*5 & [null_d]*6 & [null_d]*7 & -\infty & -\infty 
 \end{bmatrix}
 $$
 
-$$softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right})V_e = \begin{bmatrix} 0.0321 & 0.0871 & 0.2369 & 0.6439 & 0 & 0 \\\
+$$\mathop{\text{Softmax}}(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{\text {right }})V_e = \begin{bmatrix} 0.0321 & 0.0871 & 0.2369 & 0.6439 & 0 & 0 \\\
 0.0021 & 0.0158 & 0.1171 & 0.8650 & 0 & 0 \\\
  1.1727e-04 &  2.3554e-03 & 4.7309e-02 & 9.5022e-01 & 0 & 0\\\
  w_1^{null} & w_2^{null} & w_3^{null} & w_4^{null} & 0 & 0 \\\
@@ -503,16 +503,16 @@ As it is possible to see the output vector contains at the end some values that 
 
 #### Left Decoder's input padding mask
 
-$$\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} = \begin{bmatrix} 4 & 5 & 6 & 7 & 1*[null_e] & 1*[null_e] \\\
+$$\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{\text{left}} = \begin{bmatrix} 4 & 5 & 6 & 7 & 1*[null_e] & 1*[null_e] \\\
  8 & 10 & 12 & 14 & 2*[null_e] & 2*[null_e] \\\
  12 & 15 & 18 & 21 & 3*[null_e] & 3*[null_e] \\\
--inf & -inf & -inf & -inf & -inf & -inf  \\\
--inf & -inf & -inf & -inf & -inf & -inf  \\\
--inf & -inf & -inf & -inf & -inf & -inf 
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty  \\\
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty  \\\
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty 
 \end{bmatrix}
 $$
 
-$$softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} )V_e = \begin{bmatrix} w_1^{dirty} & w_2^{dirty} & w_3^{dirty} & w_4^{dirty} & w_5^{null} & w_6^{null} \\\
+$$\mathop{\text{Softmax}}(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{\text{left}} )V_e = \begin{bmatrix} w_1^{dirty} & w_2^{dirty} & w_3^{dirty} & w_4^{dirty} & w_5^{null} & w_6^{null} \\\
 w_1^{dirty} & w_2^{dirty} & w_3^{dirty} & w_4^{dirty} & w_5^{null} & w_6^{null} \\\
 w_1^{dirty} & w_2^{dirty} & w_3^{dirty} & w_4^{dirty} & w_5^{null} & w_6^{null} \\\
 0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666  \\\
@@ -541,16 +541,16 @@ Finally, the combination of both the padding masks.
 #### Both Encoder's and  Decoder's input padding mask
 
 $$
-\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} + M_e^{right} = \begin{bmatrix} 4 & 5 & 6 & 7 & -inf & -inf \\\
- 8 & 10 & 12 & 14 & -inf & -inf \\\
- 12 & 15 & 18 & 21 & -inf & -inf \\\
--inf & -inf & -inf & -inf & -inf & -inf  \\\
--inf & -inf & -inf & -inf & -inf & -inf  \\\
--inf & -inf & -inf & -inf & -inf & -inf 
+\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{\text{left}} + M_e^{\text {right }} = \begin{bmatrix} 4 & 5 & 6 & 7 & -\infty & -\infty \\\
+ 8 & 10 & 12 & 14 & -\infty & -\infty \\\
+ 12 & 15 & 18 & 21 & -\infty & -\infty \\\
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty  \\\
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty  \\\
+-\infty & -\infty & -\infty & -\infty & -\infty & -\infty 
 \end{bmatrix}
 $$
 $$
-softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} + M_e^{right})V_e = \begin{bmatrix} 0.0321 & 0.0871 & 0.2369 & 0.6439 & 0 & 0 \\\
+\mathop{\text{Softmax}}(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{\text{left}} + M_e^{\text {right }})V_e = \begin{bmatrix} 0.0321 & 0.0871 & 0.2369 & 0.6439 & 0 & 0 \\\
 0.0021 & 0.0158 & 0.1171 & 0.8650 & 0 & 0 \\\
  1.1727e-04 &  2.3554e-03 & 4.7309e-02 & 9.5022e-01 & 0 & 0\\\
 0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666 & 0.1666  \\\
@@ -575,7 +575,7 @@ $$
 ### Finally we have our answer!
 First!
 
-$$softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} + M_e^{right})V_e = softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right})V_e$$
+$$\mathop{\text{Softmax}}(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_d^{left} + M_e^{\text {right }})V_e = \mathop{\text{Softmax}}(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{\text {right }})V_e$$
 
 Using the decoder's input padding mask would create dirty values. Hence, using the right encoder's input padding mask is the best choice. 
 Not using any padding mask for the Cross-Attention block would create dirty values. 
@@ -598,16 +598,16 @@ Just to experimentally validate this assertion I trained a simple Transformer mo
 
 #### - Self-Attention Encoder block: 
 
-$$SelfAttention(Q_{e}, K_{e}, V_{e}) = softmax(\frac{Q_{e}K_{e}^{T}}{\sqrt{d_k}} + M_e^{P})V_{e}$$
+$$SelfAttention(Q_{e}, K_{e}, V_{e}) = \mathop{\text{Softmax}}(\frac{Q_{e}K_{e}^{T}}{\sqrt{d_k}} + M_e^{P})V_{e}$$
 
-$M_e^{P} = M_e^{left} + M_e^{right}$ that is $M_e^{left} = M_e^{right^T}$
+$M_e^{P} = M_e^{\text{left}} + M_e^{\text {right }}$ that is $M_e^{\text{\text{left}}} = M_e^{\text {right }^T}$
 #### - Decoder MASKED Self-Attention block: : 
 
-$$MaskedSelfAttention(Q_{d}, K_{d}, V_{d}) = softmax(\frac{Q_{d}K_{d}^{T}}{\sqrt{d_k}} + M_d^{P} + M^{C})V_{d}$$
-$M_d^{P} = M_d^{left} + M_d^{right}$ that is $M_d^{left} = M_d^{right^T}$
+$$MaskedSelfAttention(Q_{d}, K_{d}, V_{d}) = \mathop{\text{Softmax}}(\frac{Q_{d}K_{d}^{T}}{\sqrt{d_k}} + M_d^{P} + M^{C})V_{d}$$
+$M_d^{P} = M_d^{\text{left}} + M_d^{\text {right }}$ that is $M_d^{\text{left}} = M_d^{\text {right }^T}$
 #### - Encoder-Decoder Cross-Attention block: 
 
-$$CrossAttention(Q_{d}, K_{e}, V_{e}) = softmax(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{right})V_{e}$$
+$$CrossAttention(Q_{d}, K_{e}, V_{e}) = \mathop{\text{Softmax}}(\frac{Q_{d}K_{e}^{T}}{\sqrt{d_k}} + M_e^{\text {right }})V_{e}$$
 
 Where the pedices $e$ or $d$ in this case stand for Encoder and Decoder. $M^P$ is the Padding Mask, $M^C$ is the Causal Mask, $d_k$ is the embedding dimension that in our case is $E$, (in whole in example we didn't mention the different heads).
 
