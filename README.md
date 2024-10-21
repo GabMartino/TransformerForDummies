@@ -590,7 +590,7 @@ Just to experimentally validate this assertion I trained a simple Transformer mo
 #### - **Encoder-Decoder Cross-Attention block wants: ENCODER'S INPUT padding MASK**
 
 <p align="center">
-<img src="./assets/padding_Masks.png" alt="Transformer Architecture with masks annotated" width="50%"/>
+<img src="./assets/Padding_Masks.png" alt="Transformer Architecture with masks annotated" width="50%"/>
 </p>
 
 
