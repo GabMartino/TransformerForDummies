@@ -790,8 +790,49 @@ Fortunately, the *nn.CrossEntropyLoss(...)* class has the *ignore_index* paramet
 self.loss = nn.CrossEntropyLoss(ignore_index=self.padding_index)
 ```
 
-Of course other faster ways to implement this are possible.
+Of course other faster implemenations are possible.
 
+## The Inference
+
+As already heard many times, the inference is done in autoregressive way. This means that the output depends on all the previous values. 
+However,
+
+### How come the output of the decoder is of the same size of its input even though we just need the next token?
+
+Well for the first token is simple: the input will be $\text{[SOS]}$ and only one token will be given, so it's enough to compute the softmax over those vocab_size values.
+However, from the second step on the input of the decoder will be $[\text{[SOS]}, \text{token}_1]$ so also the output will have the sequence lenght of two!
+From this point on, it's just enough to consider the LAST token.
+
+```python
+out = model(encoder_input=tokenized_sentence,
+                        decoder_input=decoder_input)
+## The output will be of size (Batch_size, sequence_lenght, vocab_size)
+out = torch.argmax(torch.softmax(out[:, -1, :], dim=-1)) ## Take just the last one
+decoder_input = torch.cat([decoder_input, out.unsqueeze(0).unsqueeze(0)], dim=-1)
+```
+
+### Ok, but why it works in this way?
+Well, remember the example of the causal mask, that I'll report here:
+
+
+$$\mathop{\text{Softmax}}\bigg(\frac{QK^{T}}{\sqrt{d_k}} + M^C\bigg)V = \begin{bmatrix} 
+1.0000e+00 & 0 & 0 & 0 & 0 &  0  \\\
+1.1920e-01 & 8.8080e-01 & 0 & 0 & 0 & 0\\\
+2.3556e-03 & 4.7314e-02 & 9.5033e-01 & 0 & 0 & 0\\\
+6.0317e-06 & 3.2932e-04 & 1.7980e-02 & 9.8168e-01 & 0 &  0 \\\
+2.0473e-09 & 3.0384e-07 & 4.5094e-05 & 6.6925e-03 & 9.9326e-01 & 0  \\\
+9.3344e-14 & 3.7658e-11 & 1.5192e-08 & 6.1290e-06 &  2.4726e-03 & 9.9752e-01
+\end{bmatrix} * \begin{bmatrix} 1 \\\ 2 \\\ 3 \\\ 4 \\\ 5 \\\ 6\end{bmatrix} = \begin{bmatrix}
+    1.0\\\
+    1.8808 \\\
+    2.9480 \\\
+    3.9813 \\\
+    4.9932 \\\
+    5.9975
+    \end{bmatrix}$$
+
+The output vector is of our concern. The first component of the output vector consider only the first token, the second component the first two, the third one the first three, and so on.
+For this reason, we'll just take the last element. 
 
 ## References
 
