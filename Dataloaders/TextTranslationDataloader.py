@@ -1,12 +1,13 @@
 import json
 
+import nltk
 import torch
 import lightning as pl
 from torch.utils.data import DataLoader
 
 import linecache as lc
 from nltk.tokenize import word_tokenize
-
+nltk.download('punkt_tab')
 
 def load_vocabulary(vocabulary_path):
     vocabulary = None
@@ -56,7 +57,7 @@ class TextTranslationDatasetOnDemand(torch.utils.data.Dataset):
         self.target_vocabulary["[SOS]"] = len(self.target_vocabulary)
         self.target_vocabulary["[EOS]"] = len(self.target_vocabulary)
         self.target_vocabulary["[PAD]"] = len(self.target_vocabulary)
-        print( self.target_vocabulary["[SOS]"],  self.target_vocabulary["[EOS]"],  self.target_vocabulary["[PAD]"])
+        #print( self.target_vocabulary["[SOS]"],  self.target_vocabulary["[EOS]"],  self.target_vocabulary["[PAD]"])
         self.max_dataset_lenght = max_dataset_lenght
         self.max_sentence_len = max_sentence_len + 2
         check_maximum_size(self.source_data_path, max_dataset_lenght)
@@ -131,7 +132,7 @@ class TextTranslationDataloader(pl.LightningDataModule):
                     torch.stack(source_masks),
                     torch.stack(target_batches),
                     torch.stack(target_masks))
-        return DataLoader(self.train_set, batch_size=self.batch_size, collate_fn=collate, shuffle=True, num_workers=4)
+        return DataLoader(self.train_set, batch_size=self.batch_size, collate_fn=collate, shuffle=True, prefetch_factor=4, num_workers=16)
     def val_dataloader(self):
         def collate(batch):
             source_batches = []
@@ -148,7 +149,7 @@ class TextTranslationDataloader(pl.LightningDataModule):
                     torch.stack(source_masks),
                     torch.stack(target_batches),
                     torch.stack(target_masks))
-        return DataLoader(self.val_set, batch_size=self.batch_size, collate_fn=collate, shuffle=False, num_workers=4)
+        return DataLoader(self.val_set, batch_size=self.batch_size, collate_fn=collate, shuffle=False, prefetch_factor=4,  num_workers=16)
 
 
 def main():

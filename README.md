@@ -1,29 +1,27 @@
 # TransformerForDummies :rocket:
-When I started to study the Transformer model, I found that some important details of the model implementation were not totally clear 
-and I needed to search for other implementation or explanations of these details. 
+When I started to study the Transformer model, I found that some important details of the model implementation were not totally clear and I needed to search for other implementations or explanations of these details.
 
 For this reason, I decided to report some clarifications for the most important doubts that I had, hoping that this could help some other researchers!
 
-These explainations assume a basic knowledge of the transformer models (e.g. Encoder-Decoder architecture, Multi-Head Attention Mechanism, tokenization, etc.),
-avoiding creating a redundant repository over millions already present on the web. In this way, I can focus specifically on the ambiguities.
+These explanations assume a basic knowledge of the transformer models (e.g. Encoder-Decoder architecture, Multi-Head  Attention Mechanism, tokenization, etc.), avoiding creating a redundant repository over millions already present on the web. In this way, I can focus specifically on the ambiguities.
 
 This Repo offers:
 
 #### 1. This README.md file with all the explained ambiguities that I found;
-#### 2. A complete, clear and commented implementation of the Transformer model in Pytorch and Pytorch Lightning.
+#### 2. A complete, clear, and commented implementation of the Transformer model in Pytorch and Pytorch Lightning.
 
-#### :warning: Note: this Repo is currently under extension and correction...
+
 ## The Architecture :tada: 
-The very well known image that depict the transformer architecture hides a lot of important information that are useful for the correct implementation.
+The very well-known image that depicts the transformer architecture hides a lot of important information that is useful for the correct implementation.
 <p align="center">
 <img src="./assets/Transformer_architecture.png" alt="Transformer" width="50%"/>
 </p>
 
-Some of the first questions that came up in my mind when I had a look to this picture were:
+Some of the first questions that came up in my mind when I had a look at this picture were:
 ### 1) **How the Encoder and Decoder are connected?**
 
 The encoder and the decoder can have multiple layers (N as reported). The output of the encoder seems to be connected to the decoder. 
-But! into which layer?? The last one, the first one?? All of them??
+But! Into which layer?? The last one, the first one?? All of them??
 
 ### <center>**The Encoder Output is brought to ALL the Decoder Layers**</center>
 As reported in:
@@ -34,8 +32,8 @@ As reported in:
 
 Picture taken by (https://www.truefoundry.com/blog/transformer-architecture)
 
-### 2) **How the Encoder's output is connected to the 'Multi-Head Attention of the Decoder'?**
-Every attention block has three inputs that should be the Query, Key and Value. Which one is what??
+### 2) **How is the encoder's output connected to the 'Multi-Head Attention of the Decoder'?**
+Every attention block has three inputs that should Query, Key, and Value. Which one is what??
 
 ###  <p align=center>**The Keys and the Values come from the Encoder, the Queries come from the last sublayer of the decoder.**</p>
 
@@ -49,33 +47,29 @@ Both the above answers could be extracted with a bit of interpretation from:
 </p>
 Notice the phrase: 
 
-*This allows every position in the decoder to attend over all the positions in the input sequence*, this sentence will also useful later.
+*This allows every position in the decoder to attend over all the positions in the input sequence*, this sentence will also be useful later.
 
 
-### 3) **What's the difference among the three different attention blocks?**
+### 3) **What's the difference between the three different attention blocks?**
 
 In the rest of the README we'll call:
 - **Self-Attention block** of the encoder: the attention block of the encoder (of course :) )
 - **Masked-Self-Attention block** of the decoder: you got it!
-- **Cross-Attention block**: the block where encoder is connected to the decoder.
+- **Cross-Attention block**: the block where the encoder is connected to the decoder.
 
 Later a more detailed answer!
 
 ## The Masks :collision:
 
-I admit that I struggled a bit to understand well how the masking is used into this model, mainly because a looot of things are given for granted,
-and appear clear and obvious only when you start to implement things and problems come up.
+I admit that I struggled a bit to understand well how the masking is used in this model, mainly because a looot of things are given for granted, and appear clear and obvious only when you start to implement things and problems come up.
 
 ### 1) **How the mask is included in the Masked-Self-Attention block of the decoder?**
 
 ### The Look-Ahead/Causal Mask
 
-First of all, I would have named the "Look Ahead Mask" as "DON'T Look Ahead Mask".
-This mask is used for the decoder to allow the computation of the attention only backward in the sentence. 
+First of all, I would have named the "Look Ahead Mask" as the "DON'T Look Ahead Mask". This mask is used by the decoder to allow the computation of attention only backward in the sentence.
 
-Yes, it has sense, but why?? Well, because at the inference time, the decoder will act in auto-regressive manner, 
-that means that it only has the encoder input as complete sentence, and the decoder should generate a word at time during inference.
-Hence, only using the already generated words. For this reason, we need to force at the training time to learn to predict the ground-truth output sentence without looking at the next words, otherwise that's cheating!
+Yes, it makes sense, but why?? Well, because at the inference time, the decoder will act in an auto-regressive manner, which means that it only has the encoder's input as a complete sentence, and the decoder should generate a word at a time during inference. Hence, only using the already generated words. For this reason, we need to force at training time to learn to predict the ground-truth output sentence without looking at the next words, otherwise, that's cheating!
 
 Here we report the shape of the "Don't look ahead mask" also called "Causal Mask":
 $M^C \in \mathbb{R}^{L x L}$
@@ -90,9 +84,9 @@ $$M^C = \begin{bmatrix}
 \end{bmatrix}
 $$
 
-Notice that size of the mask is $L \times L$ that is the lenght of the sentence. 
+Notice that the size of the mask is $L \times L$ which is the length of the sentence. 
 
-The matrix is composed by zeros and $-\infty$, we'll see in a moment why.
+The matrix is composed of zeros and $-\infty$, we'll see in a moment why.
 
 ### **The computation of the masked attention is then**:
 
@@ -160,13 +154,12 @@ $Q = K = V \in \mathbb{R}^{L \times 1}$ for this reason after the softmax we hav
 
 ### ACHTUNG :anger:
 
-#### 1. The softmax function is numerical unstable for $-\infty$. For this reason, we need to modify $-\infty$ values in a VERY HIGH NEGATIVE VALUE like -1E15;
-#### 2. The softmax function is applied "for each rows"! But remember how Pytorch handles the dimensions!
+#### 1. The softmax function is numerically unstable for $-\infty$. For this reason, we need to modify $-\infty$ values in a VERY HIGH NEGATIVE VALUE like -1E15;
+#### 2. The softmax function is applied "for each row"! But remember how Pytorch handles the dimensions!
 
-This could be trivial for the practitioners but it's important to explicate everything (the repo it's called **_TransformerForDummies_** after all :D)
+This could be trivial for the practitioners but it's important to explicate everything (the repo is called **TransformerForDummies** after all :D)
 
-First of all, remember what the "dimensions" mean in the pytorch: dim = 0, means that you are indexing through the rows! dim = 1 means that you are indexing through the columns. 
-
+First of all, remember what the "dimensions" mean in pytorch: dim = 0, means that you are indexing through the rows! Dim = 1  means that you are indexing through the columns.
 <p align="center">
 <img src="./assets/tensor.jpg" alt="Transformer Explained" width="70%"/>
 </p>
@@ -176,7 +169,7 @@ However, the Pytorch documentation of the softmax function reports:
 <img src="./assets/softmax.png" alt="Transformer Explained" width="90%"/>
 </p>
 
-That in this case means that every rows will be "collapsed" independently to compute the softmax.
+That in this case means that every row will be "collapsed" independently to compute the softmax.
 Hence, after the:
 
 ```python
@@ -221,15 +214,12 @@ $$\mathop{\text{Attention}}(Q, V, K) = \begin{bmatrix}
     5.9975
     \end{bmatrix}$$
 
-This new vector represents a weighted combination of the values of $V$, in fact the first component consider only the first value, the second component is the weighted sum of the first two components, and so on...
-
-
+This new vector represents a weighted combination of the values of  $V$, in fact, the first component considers only the first value, the second component is the weighted sum of the first two components, and so on...
 ### The Padding Mask
 
-The Padding mask could seem trivial at first sight, but it has its own quibbles. First reason on why it is necessary: **Not all the sentences have the same lenght!**
-
+The Padding mask could seem trivial at first sight, but it has its own quibbles. The first reason why it is necessary is that **not all the sentences have the same length!**
 We:
-- **Add Padding tokens to bring all the sentences to have the same lenght;**
+- **Add Padding tokens to bring all the sentences to have the same length;**
 - **Create a mask that "block" the softmax function to consider this token that are uninformative.**
 
 ## The padding Mask: requires a paragraph for itself... :fire:
@@ -237,15 +227,15 @@ We:
 
 ### ***<p align=center>In this case we don't need a padding mask</p>***
 
-### 2) Wait? But the encoder's input and the decoder's input can have different lenghts? What about the padding then?
+### 2) Wait? But the encoder's input and the decoder's input can have different lengths? What about the padding then?
 
-### ***<p align=center>The two inputs can have a different lenghts. </p>***
+### ***<p align=center>The two inputs can have a different lengths. </p>***
 
-Let's assume that we have the batch size equals to 1, the encoder output is $X \in \mathbb{R}^{L_1 \times E}$ and the input of the decoder is $Y \in \mathbb{R}^{L_2 \times E}$ (the same dimensionality of the input of the decoder is reported till the point of the conjuction of the two, that is the "Cross-Attention"), where $L_1$ is the lenght of the sentence in the encoder, $L_2$ is the lenght of the sentence in the decoder, $E$ is the embedding size.
+Let's assume that we have the batch size equal to 1, the encoder output is $X \in \mathbb{R}^{L_1 \times E}$ and the input of the decoder is $Y \in \mathbb{R}^{L_2 \times E}$ (the same dimensionality of the input of the decoder is reported till the point of the conjunction of the two, that is the "Cross-Attention"), where $L_1$ is the length of the sentence in the encoder, $L_2$ is the length of the sentence in the decoder, $E$ is the embedding size.
 
 First of all, the $E$ should be the same for the encoder and the decoder, if it is not obvious now, it will be in a second.
 
-About the two sequence lenght instead, we remind from the answer 2, that the decoder offers the query to the attention, the encoder the keys and the values instead. Hence, $Q \in \mathbb{R}^{L_2 \times E}, K \in \mathbb{R}^{L_1 \times E}, V \in \mathbb{R}^{L_1 \times E}$
+About the two sequence lengths instead, we remind from the answer 2, that the decoder offers the query to the attention, the encoder the keys, and the values instead. Hence, $Q \in \mathbb{R}^{L_2 \times E}, K \in \mathbb{R}^{L_1 \times E}, V \in \mathbb{R}^{L_1 \times E}$
 
 $$\frac{QK^{T}}{\sqrt{|E|}} \in \mathbb{R}^{(L_2 \times E) \times (E \times L_1)} = \mathbb{R}^{L_2 \times L_1}$$
 
@@ -257,27 +247,27 @@ $$\mathop{\text{Softmax}}(\frac{Q_{d}K_{e}^{T}}{\sqrt{|E|}})V_{e} \in \mathbb{R}
 
 where the pedices $e$ and $d$ denote the encoder and the decoder respectively, since we're talking about the Cross-Attention block.
 So,
-### ***<p align=center>In this case the decoder's output will have the same decoder's input lenght. </p>***
+### ***<p align=center>In this case the decoder's output will have the same decoder's input length. </p>***
 
-From a practical point of view though, we need to understand when have different lenghts is convenient, necessary or else:
+From a practical point of view though, we need to understand when have different lengths is convenient, necessary or else:
 - *Training*: 
-  - during the training the batch size is larger than 1, so the padding *IS NECESSARY*.
-  - It theory it is also possible to create batches for the encoder and the decoder of different lenghts (sequence lenghts, not the batch size of course). This can be annoying from the implementative point of view, but it could be convenient if there is a large difference in the lenghts of the sequences between the two languages (if we consider a translation task)
-  - In practise during the training, the dataloader is often implemented using the same lenghts for the encoder's and decoder's inputs
+  - During the training, the batch size is larger than 1, so the padding _IS NECESSARY_;
+  -	In theory, it is also possible to create batches for the encoder and the decoder of different lengths (sequence lengths, not the batch size of course). This can be annoying from the implementation point of view, but it could be convenient if there is a large difference in the lengths of the sequences between the two languages (if we consider a translation  task);
+  - In practise during the training, the dataloader is often implemented using the same lengths for the encoder's and decoder's inputs.
 - *Inference*:
-  - At inference time (manually testing the model for example) often we use just one input, in this case we don't need the padding since the batch size = 1. 
-  - On the other hand if we implemented the model in such a way it is possible to have different sizes of encoder's input and output's, we don't even need the padding for the input.
+  - At inference time (manually testing the model for example) we often use just one input, in this case, we don't need the padding since the batch size = 1.
+  - On the other hand, if we implemented the model in such a way it is possible to have different sizes of the encoder's input and output, we don't even need the padding for the input.
 
 Recap:
 - The padding is used for two reasons:
   - Aligning the sequences for the same batch;
-  - Aligning the sequences for between the two batches of encoder and decoder (depends on the implementation).
+  - Aligning the sequences between the two batches of encoder and decoder (depends on the implementation).
 
 ### 4) What is the shape of the padding Mask? How is it employed?
 
-First, if we want to talk about padding mask we need to consider the Batch size > 1 that we'll name $B$. Hence, $Q \in \mathbb{R}^{B \times L \times E}, K \in \mathbb{R}^{B \times L \times E}, V \in \mathbb{R}^{B \times L \times E}$, $L$ is the sequence lenght and $E$ is the embedding size.
+First, if we want to talk about padding mask we need to consider the Batch size > 1 that we'll name $B$. Hence, $Q \in \mathbb{R}^{B \times L \times E}, K \in \mathbb{R}^{B \times L \times E}, V \in \mathbb{R}^{B \times L \times E}$, $L$ is the sequence length and $E$ is the embedding size.
 
-Now, we'll use an arbitrary value for the padding token $[\text{PAD}]$, to align all the $|B|$ sequences to the same lenght $L$. 
+Now, we'll use an arbitrary value for the padding token $[\text{PAD}]$, to align all the $|B|$ sequences to the same length $L$. 
 
 As an example, the "proto-padding-mask" where $|B| = 4$ and $|L| = 6$, will be:
 
@@ -800,13 +790,13 @@ However,
 ### How come the output of the decoder is of the same size of its input even though we just need the next token?
 
 Well for the first token is simple: the input will be $\text{[SOS]}$ and only one token will be given, so it's enough to compute the softmax over those vocab_size values.
-However, from the second step on the input of the decoder will be $[\text{[SOS]}, \text{token}_1]$ so also the output will have the sequence lenght of two!
+However, from the second step on the input of the decoder will be $[\text{[SOS]}, \text{token}_1]$ so also the output will have the sequence length of two!
 From this point on, it's just enough to consider the LAST token.
 
 ```python
 out = model(encoder_input=tokenized_sentence,
                         decoder_input=decoder_input)
-## The output will be of size (Batch_size, sequence_lenght, vocab_size)
+## The output will be of size (Batch_size, sequence_length, vocab_size)
 out = torch.argmax(torch.softmax(out[:, -1, :], dim=-1)) ## Take just the last one
 decoder_input = torch.cat([decoder_input, out.unsqueeze(0).unsqueeze(0)], dim=-1)
 ```

@@ -11,40 +11,44 @@ target_language:
   name: Italian
   dataset_path: "./Datasets/it-en/europarl-v7.it-en.it"
   vocabulary_path: "./Dataloaders/italian_vocab.json"
-maximum_dataset_lenght: 100000
+maximum_dataset_lenght: 200000
 
 ###### ENCODER
 encoder:
   vocab_size: 10000
   ## Actually not used. Extracted from the dataset
-  num_layers: 1
-  ff_hidden_size: 128
+  num_layers: 3
+  ff_hidden_size: 2048
 
 #### DECODER
 decoder:
   vocab_size: 10000
   ## Actually not used. Extracted from the dataset
-  num_layers: 1
-  ff_hidden_size: 128
+  num_layers: 3
+  ff_hidden_size: 512
 
 #### BOTH
 same_source_target_vocabulary: False
 ## If True the embedding layer will be shared between the encoder and decoder, otherwise the encoder layers will be different
-embedding_size: 16
-num_heads: 1
+embedding_size: 64
+num_heads: 2
 ignore_index: None ## Extracted from the dataset class
 
 ### TRAINING CONFIG
+hpc: True
+wandb:
+  project_name: "TransformerForDummies"
+  key: "c24cf6acc3a02e075437e260f964f400c9295fea"
 checkpoint_dir: "./checkpoints"
 logs_dir: "./logs"
 from_checkpoint: True
 train: False
 test: True
 
-max_epochs: 1
+max_epochs: 10
 lr: 1e-3
 label_smoothing: 0.1
 with_scheduler: False ## False just use the learning rate, True use the scheduler and learning rate like in the original article
-batch_size: 6
+batch_size: 16
 dropout: 0.1
 warmup_steps: 4000
