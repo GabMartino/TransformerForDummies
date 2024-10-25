@@ -4,8 +4,10 @@ import os
 import hydra
 import lightning as pl
 import torch
+import wandb
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 from lightning.pytorch.loggers import TensorBoardLogger
+from lightning.pytorch.loggers import WandbLogger
 from nltk import word_tokenize
 
 from Dataloaders.TextTranslationDataloader import TextTranslationDataloader
@@ -51,7 +53,13 @@ def main(cfg):
     else:
         model = TransformerLightning(cfg)
 
-    logger = TensorBoardLogger(cfg.logs_dir)
+    logger = None
+    if cfg.hpc:
+        wandb.login(key=cfg.wandb.key)
+        logger = WandbLogger(project=cfg.wandb.project_name,
+                             log_model="all", save_dir=cfg.logs_dir)
+    else:
+        logger = TensorBoardLogger(cfg.logs_dir)
     lr_monitor = LearningRateMonitor(logging_interval='step')
     trainer = pl.Trainer(max_epochs=cfg.max_epochs,
                          accelerator="gpu",
@@ -70,7 +78,7 @@ def main(cfg):
         model = model.to("cpu")
         model = model.model
         print("model size", model.target_embedding.linear_out.out_features)
-        prompt = ","
+        prompt = "relevant"
         '''
             1. Tokenize
         '''
