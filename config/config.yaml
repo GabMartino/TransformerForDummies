@@ -38,7 +38,7 @@ ignore_index: None ## Extracted from the dataset class
 hpc: True
 wandb:
   project_name: "TransformerForDummies"
-  key: "KEY"
+  key: 
 checkpoint_dir: "./checkpoints"
 logs_dir: "./logs"
 from_checkpoint: True
