@@ -8,3 +8,4 @@
 ./Datasets/*
 ./checkpoints/*
 ./test.py
+./slurm_start.sh
