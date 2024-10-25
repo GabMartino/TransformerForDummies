@@ -350,8 +350,7 @@ $$M^{P} = \[ M^{P}_1, ..., M^{P}_B \]$$
 
 ### 3) Ok, but the Transformer has 3 attention blocks in which one I should insert the padding mask?
 
-This is probably one of the hardest question I had to find an answer to. Let's start from the most trivial things. The Masked-Self-Attention block of course needs the Causal Mask, and that's ok. However, the most reasonable thing is that both the Self-attention block of the encoder, and Masked-Self-Attention block of the Decoder, also need a padding Mask.
-This is because as reported in the article:
+This is probably one of the hardest questions I had to find an answer to. Let's start with the most trivial things. The Masked-Self-Attention block of course needs the Causal Mask, and that's ok. However, the most reasonable thing is that both the Self-attention block of the encoder and the Masked-Self-Attention block of the Decoder, also need a padding  Mask. This is because as reported in the article:
 
 - _"The encoder contains self-attention layers. In a self-attention layer all of the keys, values
 and queries come from the same place, in this case, the output of the previous layer in the
@@ -363,9 +362,7 @@ information flow in the decoder to preserve the auto-regressive property. We imp
 inside of scaled dot-product attention by masking out (setting to −∞) all values in the input
 of the softmax which correspond to illegal connections. See Figure 2"_
 
-When in the article is mentioned that the self-attention blocks should attend to "all the positions", it's reasonable to think that only the meaningful part should be attended, so excluding the padding token. 
-Hence, until now we have: Encoder's Self-Attention block needs the Padding Mask; the Decoder's Masked-Self-Attention block needs padding Mask + Causal Mask.
-
+When the article mentions that the self-attention blocks should attend to "all the positions", it's reasonable to think that only the meaningful part should be attended to, so excluding the padding token. Hence, until now we have: the Encoder's Self-Attention block needs the  Padding Mask; the Decoder's Masked-Self-Attention block needs padding  Mask + Causal Mask.
 #### Perfect! **But what about the Cross-Attention block in the decoder?** 
 
 The article reports:
@@ -374,12 +371,11 @@ The article reports:
 <img src="./assets/paragraph_1.jpg" alt="Paragraph" width="90%"/>
 </p>
 
-So, if we need to consider the same rational where "all the positions" means all the meaningful positions, Do we need to combine two padding masks??,
-the encoder and the decoder's one, also considering that Queries come from the decoder and the Keys from the encoder?? However, since I didn't want to speculate much, I needed to investigate more.
+So, if we need to consider the same rationale where "all the positions"  means all the meaningful positions, Do we need to combine two padding masks??, the encoder's and the decoder's, also considering that Queries come from the decoder and the Keys from the encoder?? However, since I didn't want to speculate much, I needed to investigate more.
 
-First of all, I found that the same question has been asked a lot around the web, but few time I've seen a reasonable answer: [HERE](https://medium.com/@sxyxiaoyao/i-have-a-question-about-this-line-code-why-we-need-memory-mask-in-decoder-ab7d5a9e8060) [HERE](https://github.com/pytorch/pytorch/issues/124931) [HERE](https://stackoverflow.com/questions/62170439/difference-between-src-mask-and-src-key-padding-mask) [HERE](https://medium.com/@bavalpreetsinghh/transformer-from-scratch-using-pytorch-28a5d1b2e033) [HERE](https://datascience.stackexchange.com/questions/65067/proper-masking-in-the-transformer-model) [HERE](https://datascience.stackexchange.com/questions/88097/why-do-transformers-mask-at-every-layer-instead-of-just-at-the-input-layer) [HERE](https://ai.stackexchange.com/questions/25041/is-the-decoder-mask-triangular-mask-applied-only-in-the-first-decoder-block-o)
+First of all, I found that the same question has been asked a lot around the web, but few times I've seen a reasonable answer: [HERE](https://medium.com/@sxyxiaoyao/i-have-a-question-about-this-line-code-why-we-need-memory-mask-in-decoder-ab7d5a9e8060) [HERE](https://github.com/pytorch/pytorch/issues/124931) [HERE](https://stackoverflow.com/questions/62170439/difference-between-src-mask-and-src-key-padding-mask) [HERE](https://medium.com/@bavalpreetsinghh/transformer-from-scratch-using-pytorch-28a5d1b2e033) [HERE](https://datascience.stackexchange.com/questions/65067/proper-masking-in-the-transformer-model) [HERE](https://datascience.stackexchange.com/questions/88097/why-do-transformers-mask-at-every-layer-instead-of-just-at-the-input-layer) [HERE](https://ai.stackexchange.com/questions/25041/is-the-decoder-mask-triangular-mask-applied-only-in-the-first-decoder-block-o)
 
-Unfortunately, not all the answer were clear and agreed to each other. In spite of this, I tried to have my own answer, mainly based on these factors:
+Unfortunately, not all the answers were clear and agreed with each other. Despite this, I tried to have my answer, mainly  based on these factors:
 
 - The official Pytorch Implementation of the Transformer model has as parameter the **_memory_mask_** [HERE](https://pytorch.org/docs/stable/generated/torch.nn.Transformer.html)
 - [This article](https://medium.com/@bavalpreetsinghh/transformer-from-scratch-using-pytorch-28a5d1b2e033) reports that it is necessary to avoid conflict. Which conflict? Not explained.
@@ -392,7 +388,7 @@ Ok, my catch on this is:
 
 However, I wasn't satisfied with this. I had to prove the sense by myself. 
 
-So, let's start with and example where queries come from the decoder, and the keys and values are the same vector from the encoder output.
+So, let's start with an example where queries come from the decoder, and the keys and values are the same vector from the encoder output.
 
 $Q_d \in \mathbb{R}^{L_2 \times E}, K_e^T \in \mathbb{R}^{E \times L_1}, V_e \in \mathbb{R}^{L_1 \times E}$ with $E = 1$
 
@@ -422,8 +418,8 @@ $$Q_dK_e^T = \begin{bmatrix} 4 & 5 & 6 & 7 & 1*[\text{null}_e] & 1*[\text{null}_
 
 Where $\text{null}_d$ or $\text{null}_e$ represent the values in the vector correspondent to the Padding values of decoder and encoder respectively.
 
-Now let's consider the three possibilities for the Padding mask: encoder's input Padding mask, decoder's input padding mask, combination of both.
-More precisely, since the computation of the $Q_dK_e^T$ have the query from the decoder and the keys from the encoder, we'll call  the "left decoder's input Padding mask" and "right encoder's input Padding mask" respectively.
+Now let's consider the three possibilities for the Padding mask:  encoder's input Padding mask, decoder's input padding mask, and a combination of both.
+More precisely, since the computation of the $Q_dK_e^T$ has the query from the decoder and the keys from the encoder, we'll call the "left decoder's input Padding mask"  and "right encoder's input Padding mask" respectively.
 
 $$M_e^{\text {right }} = \begin{bmatrix} 0 & 0 & 0 & 0 & -\infty & -\infty\\\
  0 & 0 & 0 & 0 & -\infty & -\infty \\\
@@ -573,11 +569,11 @@ Not using any padding mask for the Cross-Attention block would create dirty valu
 Just to experimentally validate this assertion I trained a simple Transformer model and I found that with the right padding mask for the Cross-Attention block leads to better validation accuracy respect to not using any.
 (7.154 vs 7.3 of Validation loss after 1 epoch)
 
-## padding Mask Usage Recap:
+## Padding Mask usage Recap:
 
-#### - **Encoder Self-Attention block wants: ENCODER'S INPUT padding MASK**
-#### - **Decoder MASKED Self-Attention block wants: DECODER'S INPUT padding MASK + CAUSAL MASK**
-#### - **Encoder-Decoder Cross-Attention block wants: ENCODER'S INPUT padding MASK**
+#### - **Encoder's Self-Attention block wants: Encoder's input Padding Mask**
+#### - **Decoder's Masked-Self-Attention block wants: Decoder's input Padding MASK + Causal Mask**
+#### - **Encoder-Decoder Cross-Attention block wants: Encoder's input Padding Mask**
 
 <p align="center">
 <img src="./assets/Padding_Masks.png" alt="Transformer Architecture with masks annotated" width="50%"/>
