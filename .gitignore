@@ -1,11 +1,18 @@
 
 
+/.idea
+/Dataloaders/__pycache__/
+/model/__pycache__/
+/model/blocks/__pycache__/
+/model/utils/__pycache__/
+/lightning_logs
+/logs
+/outputs
+/wandb
 
-./lightning_logs
-./logs
-./outputs
-
-./Datasets/*
-./checkpoints/*
-./test.py
-./slurm_start.sh
+/Datasets/*
+/checkpoints/*
+/test.py
+/slurm_start.sh
+/env.yaml
+/notes
