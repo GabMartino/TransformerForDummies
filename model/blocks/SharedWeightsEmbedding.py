@@ -1,11 +1,5 @@
-from html.parser import piclose
-from math import trunc
-
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from numpy.testing.print_coercion_tables import print_new_cast_table
-from torch.onnx.symbolic_opset11 import chunk
 
 
 class SharedWeightsEmbedding(nn.Module):

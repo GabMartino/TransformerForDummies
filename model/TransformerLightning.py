@@ -78,14 +78,6 @@ class TransformerLightning(pl.LightningModule):
         self.validation_loss_history.clear()
         self.log("val_loss_epoch", loss_mean)
 
-    def on_after_backward(self):
-        for name, param in self.named_parameters():
-            if param.grad is not None:
-                if torch.isnan(param.grad).any():
-                    print(f"NaNs in gradient of {name}")
-                if torch.isinf(param.grad).any():
-                    print(f"Infs in gradient of {name}")
-
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, betas=(0.9, 0.98), eps=1e-9)
         if self.with_scheduler:

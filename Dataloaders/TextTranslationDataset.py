@@ -66,7 +66,7 @@ class TextTranslationDataset(Dataset):
 
         source_tokens = self.source_tokenizer.encode(source_line).ids
         target_tokens = self.target_tokenizer.encode(target_line).ids
-        return source_tokens, len(source_tokens),  target_tokens, len(target_tokens)
+        return source_tokens, len(source_tokens), target_tokens, len(target_tokens)
 
 
     def collate_fn(self, batch):

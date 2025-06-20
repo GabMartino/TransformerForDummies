@@ -83,7 +83,6 @@ class Transformer(nn.Module):
 
 
 
-
 def main():
 
     vocab_size = 10000

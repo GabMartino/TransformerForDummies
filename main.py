@@ -65,11 +65,12 @@ def main(cfg):
                                        save_top_k=1,
                                        save_last=True)
 
-    trainer = pl.Trainer(max_epochs=cfg.max_epochs,
+    trainer = pl.Trainer(max_steps=cfg.max_steps,
+                         val_check_interval=cfg.val_check_interval,
+                         limit_val_batches=cfg.limit_val_batches,
                          accelerator="gpu",
                          devices=1,
                          logger=logger,
-                         profiler="simple",
                          callbacks=[model_checkpoint,
                                     lr_monitor])
 
@@ -78,7 +79,29 @@ def main(cfg):
         trainer.fit(model, datamodule=datamodule)
 
     if cfg.test:
-       pass
+        source_test_sentence = "[SOS] Questa è una frase di esempio. [EOS]"
+        source_test_sentece_encoded = datamodule.dataset.source_tokenizer.encode(source_test_sentence).ids
+        source_tensor = torch.LongTensor(source_test_sentece_encoded).unsqueeze(0)
+
+        target_input = "[SOS]"
+        target_input_encoded = datamodule.dataset.target_tokenizer.encode(target_input).ids
+        target_tensor = torch.LongTensor(target_input_encoded).unsqueeze(0)
+        model.model.eval()
+        output_sentece = []
+        with torch.no_grad():
+            for _ in range(100):
+                out = model.model(source_tensor, target_tensor)
+                out = torch.softmax(out, dim=-1)
+                out = torch.argmax(out, dim=-1)[:, -1].unsqueeze(-1)
+                target_tensor = torch.cat((target_tensor, out), dim=-1)
+                out = datamodule.dataset.target_tokenizer.decode([out.item()], skip_special_tokens=False)
+                output_sentece.append(out)
+            print("output_sentece", output_sentece)
+
+
+
+
+
 
 
 

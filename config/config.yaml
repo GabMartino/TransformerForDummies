@@ -45,9 +45,11 @@ logs_dir: "./logs"
 
 from_checkpoint: False
 train: True
-test: False
+test: True
 
-max_epochs: 10
+max_steps: 1000
+val_check_interval: 1000
+limit_val_batches: 300
 lr: 1e-3
 label_smoothing: 0.1
 with_scheduler: False ## False just use the learning rate, True use the scheduler and learning rate like in the original article
