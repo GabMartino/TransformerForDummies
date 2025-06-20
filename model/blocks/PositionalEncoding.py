@@ -8,22 +8,28 @@ import matplotlib.pyplot as plt
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, embedding_size):
+    def __init__(self, embedding_size, max_len = 10000):
         super(PositionalEncoding, self).__init__()
         self.embedding_size = embedding_size
+        self.max_len = max_len
+        '''
+                  Create the steps for the denominators
+              '''
+        self.even_steps = torch.arange(0, self.embedding_size, 2, dtype=torch.long, requires_grad=False)
+        self.odd_steps = torch.arange(1, self.embedding_size, 2, dtype=torch.long, requires_grad=False)
+        '''
+                  Create the denominators
+              '''
+        self.even_denominator = torch.pow(max_len, self.even_steps / self.embedding_size)
+        self.odd_denominator = torch.pow(max_len, self.odd_steps / self.embedding_size)
 
     def forward(self, x):
         batch_size, seq_len = x.size()
-        '''
-            Create the steps for the denominators
-        '''
-        even_steps = torch.arange(0, self.embedding_size, 2, dtype=torch.long, device=x.device)
-        odd_steps = torch.arange(1, self.embedding_size, 2, dtype=torch.long, device=x.device)
-        '''
-            Create the denominators
-        '''
-        even_denominator = torch.pow(10000, even_steps / self.embedding_size)
-        odd_denominator = torch.pow(10000, odd_steps / self.embedding_size)
+
+        if seq_len > self.max_len:
+            self.max_len = seq_len + 1000
+            self.even_denominator = torch.pow(self.max_len, self.even_steps / self.embedding_size)
+            self.odd_denominator = torch.pow(self.max_len, self.odd_steps / self.embedding_size)
         '''
             Create the steps for the positions in the sequence lenght
         '''
@@ -31,8 +37,8 @@ class PositionalEncoding(nn.Module):
         '''
             Create the encoding, unsqueezing the last dimension to allow the interleaving after
         '''
-        even_encoding = torch.sin(positions/even_denominator).unsqueeze(-1)
-        odd_encoding = torch.cos(positions/odd_denominator).unsqueeze(-1)
+        even_encoding = torch.sin(positions/self.even_denominator.to(x.device)).unsqueeze(-1)
+        odd_encoding = torch.cos(positions/self.odd_denominator.to(x.device)).unsqueeze(-1)
         '''
             Concat the two encodings reshaping for the interleaving of sin and cos values
         '''

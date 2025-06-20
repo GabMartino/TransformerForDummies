@@ -9,10 +9,10 @@ from torch.onnx.symbolic_opset11 import chunk
 
 
 class SharedWeightsEmbedding(nn.Module):
-    def __init__(self, vocab_size, embedding_size):
+    def __init__(self, vocab_size, embedding_size, padding_idx = None):
         super().__init__()
         self.embeddings_size = embedding_size
-        self.linear = nn.Embedding(vocab_size, embedding_size)
+        self.linear = nn.Embedding(vocab_size, embedding_size, padding_idx = padding_idx)
         self.linear_out = nn.Linear(embedding_size, vocab_size, bias=False)
         self.linear_out.weight = self.linear.weight
         assert self.linear_out.weight is self.linear.weight

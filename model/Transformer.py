@@ -1,4 +1,3 @@
-from multiprocessing.managers import Value
 
 import torch
 import torch.nn as nn
@@ -25,8 +24,9 @@ class Transformer(nn.Module):
         '''
             For the decoder... 
         '''
-        self.target_embedding = nn.Embedding(config.decoder.vocab_size,
-                                             config.embedding_size)
+        self.target_embedding = nn.Embedding(num_embeddings=config.decoder.vocab_size,
+                                             embedding_dim=config.embedding_size,
+                                             padding_idx=config.decoder.padding_idx)
         self.decoder = Decoder(config.embedding_size,
                                config.num_heads,
                                config.decoder.ff_hidden_size, \
@@ -35,80 +35,46 @@ class Transformer(nn.Module):
         '''
             For both 
         '''
-        self.target_embedding = SharedWeightsEmbedding(config.decoder.vocab_size, config.embedding_size)
+        self.target_embedding = SharedWeightsEmbedding(vocab_size=config.decoder.vocab_size,
+                                                       embedding_size=config.embedding_size,
+                                                       padding_idx=config.decoder.padding_idx)
 
         if config.same_source_target_vocabulary:
             self.source_embedding = self.target_embedding
         else:
-            self.source_embedding = nn.Embedding(config.encoder.vocab_size,
-                                                     config.embedding_size)
+            self.source_embedding = nn.Embedding(num_embeddings=config.encoder.vocab_size,
+                                                     embedding_dim=config.embedding_size,
+                                                 padding_idx=config.encoder.padding_idx)
 
         self.positional_encoding = PositionalEncoding(config.embedding_size)
         self.dropout = nn.Dropout(config.dropout)
 
 
-    def forward(self, encoder_input,  decoder_input, source_mask_keys = None, target_mask_keys = None, cross_attention_mask_keys=None):
-        source_embedding = self.source_embedding(encoder_input)
-        '''
-            The output is of shape (batch_size, seq_len, embedding_size)
-        '''
-        source_encoding = self.positional_encoding(encoder_input)
-        '''
-           Add positional encoding to the embedding
-       '''
-        source_embedding = source_embedding + source_encoding
-        source_embedding = self.dropout(source_embedding)
-
-        '''
-            Create source mask from the encoder keys
-        '''
-        source_mask = None
-        if source_mask_keys is not None:
-            source_mask_right = source_mask_keys.unsqueeze(1).repeat(1, encoder_input.shape[1], 1)
-            source_mask_left = source_mask_right.transpose(-1, -2)
-            source_mask = (source_mask_left | source_mask_right).float()
-            source_mask[source_mask == 1.] = -torch.inf
-
+    def forward(self, encoder_input,  decoder_input, source_padding_mask_keys = None, target_padding_mask_keys = None, out_encoder_mask_keys=None):
         '''
             ENCODER
         '''
+        '''
+            After this step the size will be:
+            (batch_size, L, embedding_size)
+        '''
+        source_embedding = self.source_embedding(encoder_input)
+        source_embedding = source_embedding + self.positional_encoding(encoder_input)
+        source_embedding = self.dropout(source_embedding)
         encoder_output = self.encoder(x=source_embedding,
-                                      mask=source_mask)
-        '''
-            Prepare Decoder's input
-        '''
-        target_embedding = self.target_embedding(decoder_input)
-        target_encoding = self.positional_encoding(decoder_input)
-        target_embedding = target_embedding + target_encoding
-        target_embedding = self.dropout(target_embedding)
+                                      padding_mask=source_padding_mask_keys)
 
         '''
-            Prepare decoder's input mask
-        '''
-        target_mask = None
-        if target_mask_keys is not None:
-            target_mask_right = target_mask_keys.unsqueeze(1).repeat(1, encoder_input.shape[1], 1)
-            target_mask_left = target_mask_right.transpose(-1, -2)
-            target_mask = (target_mask_left | target_mask_right).float()
-            target_mask[target_mask == 1.0] = -torch.inf
-
-        '''
-            Prepare cross attention mask
-        '''
-        cross_attention_mask = None
-        if cross_attention_mask_keys is not None:
-            if cross_attention_mask_keys == "encoder":
-                source_mask_right = source_mask_keys.unsqueeze(1).repeat(1, encoder_input.shape[1], 1)
-                cross_attention_mask = source_mask_right.float()
-                cross_attention_mask[cross_attention_mask == 1.] = -torch.inf
-            else:
-                raise ValueError("The cross attention mask should be either 'encoder' or a new mask")
-
-        '''
+        
             DECODER
         '''
-        out = self.decoder(x=target_embedding, decoder_mask=target_mask,
-                           encoder_output=encoder_output, cross_attention_mask=cross_attention_mask)
+        target_embedding = self.target_embedding(decoder_input)
+        target_embedding = target_embedding + self.positional_encoding(decoder_input)
+        target_embedding = self.dropout(target_embedding)
+        if out_encoder_mask_keys is None:
+            out_encoder_mask_keys = source_padding_mask_keys
+        out = self.decoder(x=target_embedding, decoder_padding_mask=target_padding_mask_keys,
+                           encoder_output=encoder_output, out_encoder_mask_keys=out_encoder_mask_keys)
         '''
             OUTPUT
         '''

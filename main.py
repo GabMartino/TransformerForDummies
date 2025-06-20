@@ -8,12 +8,11 @@ import wandb
 from lightning.pytorch.callbacks import ModelCheckpoint, LearningRateMonitor
 from lightning.pytorch.loggers import TensorBoardLogger
 from lightning.pytorch.loggers import WandbLogger
-from nltk import word_tokenize
 
 from Dataloaders.TextTranslationDataloader import TextTranslationDataloader
+from model.Transformer import Transformer
 from model.TransformerLightning import TransformerLightning
 from model.utils.utils import token_to_text
-
 
 def get_newest_checkpoint(data_path):
     list_of_files = glob.glob(data_path + "/*")
@@ -24,93 +23,62 @@ def get_newest_checkpoint(data_path):
 @hydra.main(version_base=None, config_path="config", config_name="config")
 def main(cfg):
     torch.manual_seed(cfg.seed)
-    pl.seed_everything(cfg.seed)
+    pl.seed_everything(cfg.seed, workers=True)
     torch.set_float32_matmul_precision('medium')
+
+    print("Creating Dataloaders...")
     datamodule = TextTranslationDataloader(source_data_path=cfg.source_language.dataset_path,
                                            source_language=cfg.source_language.name,
                                            source_vocabulary_path=cfg.source_language.vocabulary_path,
                                            target_data_path=cfg.target_language.dataset_path,
                                            target_language=cfg.target_language.name,
                                            target_vocabulary_path=cfg.target_language.vocabulary_path,
-                                           batch_size=cfg.batch_size,
-                                           max_dataset_lenght=cfg.maximum_dataset_lenght)
+                                           batch_size=cfg.batch_size)
 
 
-    '''
-        These variable are necessary to implement the model (embedding size in the embedding layers)
-    '''
-    cfg.encoder.vocab_size = datamodule.dataset.source_vocab_size
-    cfg.decoder.vocab_size = datamodule.dataset.target_vocab_size
     '''
         This variable is necessary to set the ignore index in the cross entropy loss 
     '''
-    cfg.ignore_index = datamodule.dataset.target_vocabulary["[PAD]"]
+    cfg.encoder.padding_idx = datamodule.dataset.source_tokenizer.encode("[PAD]").ids[0]
+    cfg.decoder.padding_idx = datamodule.dataset.target_tokenizer.encode("[PAD]").ids[0]
+    cfg.ignore_index = datamodule.dataset.target_tokenizer.encode("[PAD]").ids[0]
 
+    print("Creating Model...")
+    transformer = Transformer(cfg)
+    model = TransformerLightning(torch_model=transformer, hparams=cfg)
 
-    model = None
     if cfg.from_checkpoint:
         model = TransformerLightning.load_from_checkpoint(get_newest_checkpoint(cfg.checkpoint_dir))
-    else:
-        model = TransformerLightning(cfg)
 
     logger = None
     if cfg.hpc:
         wandb.login(key=cfg.wandb.key)
-        logger = WandbLogger(project=cfg.wandb.project_name,
-                             log_model="all", save_dir=cfg.logs_dir)
+        logger = WandbLogger(project=cfg.wandb.project_name, save_dir=cfg.logs_dir)
     else:
         logger = TensorBoardLogger(cfg.logs_dir)
+
+
     lr_monitor = LearningRateMonitor(logging_interval='step')
+    model_checkpoint = ModelCheckpoint(monitor='val_loss_epoch',
+                                            dirpath=cfg.checkpoint_dir,
+                                       save_weights_only=True,
+                                       save_top_k=1,
+                                       save_last=True)
+
     trainer = pl.Trainer(max_epochs=cfg.max_epochs,
                          accelerator="gpu",
                          devices=1,
                          logger=logger,
-                         callbacks=[ModelCheckpoint(monitor='val_loss_epoch',
-                                                    dirpath=cfg.checkpoint_dir,
-                                                    ),
+                         profiler="simple",
+                         callbacks=[model_checkpoint,
                                     lr_monitor])
 
     if cfg.train:
+        print("Start Training...")
         trainer.fit(model, datamodule=datamodule)
 
     if cfg.test:
-        model.eval()
-        model = model.to("cpu")
-        model = model.model
-        print("model size", model.target_embedding.linear_out.out_features)
-        prompt = "relevant"
-        '''
-            1. Tokenize
-        '''
-        vocabulary = datamodule.dataset.source_vocabulary
-        tokenized_sentence = [vocabulary[t.lower()] for t in word_tokenize(prompt)]
-        '''
-            2. Let's insert the [SOS] and [EOS] token in the source sentence
-        '''
-        tokenized_sentence.insert(0, vocabulary["[SOS]"])
-        tokenized_sentence.append(vocabulary["[EOS]"])
-        '''
-            3. Let's create the input for the decoder 
-        '''
-        decoder_input = [datamodule.dataset.target_vocabulary["[SOS]"]]
-        print(tokenized_sentence, decoder_input)
-        print(token_to_text(tokenized_sentence, vocabulary), token_to_text(decoder_input, datamodule.dataset.target_vocabulary))
-
-        tokenized_sentence = torch.LongTensor(tokenized_sentence, device="cpu").unsqueeze(0)
-        decoder_input = torch.LongTensor(decoder_input, device="cpu").unsqueeze(0)
-        i = 0
-        while True:
-            out = model(encoder_input=tokenized_sentence,
-                        decoder_input=decoder_input)
-            '''
-                Notice I'll take only the last token's probability values
-            '''
-            out = torch.argmax(torch.softmax(out[:, -1, :], dim=-1)) ## I'm just using the argmax, i'm not sampling
-            decoder_input = torch.cat([decoder_input, out.unsqueeze(0).unsqueeze(0)], dim=-1)
-            if out == datamodule.dataset.target_vocabulary["[EOS]"] or i >= 10:
-                break
-            i += 1
-            print(token_to_text(decoder_input.squeeze(0).numpy(), datamodule.dataset.target_vocabulary))
+       pass
 
 
 

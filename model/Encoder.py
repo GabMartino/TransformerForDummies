@@ -23,9 +23,9 @@ class EncoderLayer(nn.Module):
         self.layer_norm_2 = LayerNormalization(embedding_size)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x, mask = None):
+    def forward(self, x, padding_mask = None):
         residual = x
-        x = self.multi_head_attention(x, mask=mask)
+        x = self.multi_head_attention(x, mask=padding_mask)
         x = self.dropout(x)
         x = self.layer_norm_1(x + residual)
         residual = x
@@ -41,9 +41,9 @@ class Encoder(nn.Module):
 
         self.encoder_layers = nn.ModuleList([EncoderLayer(embedding_size, num_heads, ff_hidden_size, dropout) for _ in range(num_encoder_layers)])
 
-    def forward(self, x, mask = None):
+    def forward(self, x, padding_mask = None):
         for encoder_layer in self.encoder_layers:
-            x = encoder_layer(x, mask)
+            x = encoder_layer(x, padding_mask)
         return x
 
 

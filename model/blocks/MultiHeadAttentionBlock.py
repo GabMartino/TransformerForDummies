@@ -9,21 +9,20 @@ from matplotlib import pyplot as plt
 from model.utils.utils import create_random_padding_mask, create_look_ahead_mask
 import logging
 
-def scaled_dot_attention(q, k, v, mask = None, dropout = None):
+def create_look_ahead_mask(seq_len, device):
+    return torch.triu(torch.ones(seq_len, seq_len, device=device), diagonal=1)
+
+
+def scaled_dot_attention(q, k, v, mask = None, dropout = None, isCausal = False):
     logging.debug("Q= ", q )
     scaled = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(q.size(-1))
     if mask is not None:
-        batch_size, num_heads, seq_len, seq_len = scaled.shape
-        '''
-            mask should have the same dimensions of the scaled attention matrix
-            (batch_size, num_heads, seq_len, seq_len)
-            mask = (batch_size, seq_len, seq_len) -> (batch_size, 1, seq_len, seq_len) -> 
-                    -> (batch_size, 1 * num_heads, seq_len, seq_len)
-        '''
-        mask = mask.unsqueeze(1)
-        mask = mask.repeat(1, num_heads, 1, 1)
-        scaled = scaled + mask
-        scaled[scaled == -torch.inf] = -1e9 ## apply after to allow the upper sum operation to recognize the -inf
+        mask = mask.unsqueeze(1) ## extend for the num_heads
+        scaled.masked_fill_(mask.bool(), float('-inf'))
+        assert not torch.isnan(scaled).any()
+    if isCausal:
+        look_ahead_mask = create_look_ahead_mask(scaled.size(-1), device=scaled.device)
+        scaled.masked_fill_(look_ahead_mask.bool(), float('-inf'))
 
     attention = torch.softmax(scaled, dim=-1)
     if dropout is not None:
@@ -42,7 +41,7 @@ class MultiHeadSelfAttentionBlock(nn.Module):
 
         self.linear_to_qkv = nn.Linear(embedding_size, embedding_size * 3)
         self.out_linear = nn.Linear(embedding_size, embedding_size)
-    def forward(self, x, mask=None):
+    def forward(self, x, mask=None, isCausal = False):
         '''
             X = (batch_size, seq_len, embedding_size)
         '''
@@ -65,7 +64,7 @@ class MultiHeadSelfAttentionBlock(nn.Module):
             k = (batch_size, num_heads, seq_len, head_dim)
             v = (batch_size, num_heads, seq_len, head_dim)
         '''
-        out, _ = scaled_dot_attention(q, k, v, mask, dropout = self.dropout_rate)
+        out, _ = scaled_dot_attention(q, k, v, mask, dropout = self.dropout_rate, isCausal = isCausal)
         '''
             out = (batch_size, num_heads, seq_len, head_dim)
         '''
@@ -93,6 +92,7 @@ class MultiHeadCrossAttentionBlock(nn.Module):
         self.linear_to_kv = nn.Linear(embedding_size, embedding_size * 2)
         self.linear_to_q = nn.Linear(embedding_size, embedding_size)
         self.out_linear = nn.Linear(embedding_size, embedding_size)
+
     def forward(self, x, y, mask=None):
         ####################### PREPARE INPUT FROM THE ENCODER #####################À
         '''
@@ -204,7 +204,6 @@ def main():
     show_attention(q, k, v, out, attention)
     mask = create_look_ahead_mask(batch_size, seq_len)
 
-    exit()
     multi_head_attention_block = MultiHeadSelfAttentionBlock(embedding_dim, num_heads=3)
 
     v = multi_head_attention_block(x)

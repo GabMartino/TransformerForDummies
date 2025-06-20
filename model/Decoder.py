@@ -30,19 +30,20 @@ class DecoderLayer(nn.Module):
         self.layer_norm_2 = LayerNormalization(self.embedding_size)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x, decoder_mask, encoder_output, cross_attention_mask=None):
+
+    def forward(self, x, encoder_output, decoder_padding_mask = None, out_encoder_mask_keys=None):
         residual = x
         '''
             NOTE:
             -> THE MASK HERE FOR THE SELF ATTENTION BLOCK OF THE DECODER IS
                 MASK = LOOK AHEAD MASK + PADDING MASK 
         '''
-        x = self.masked_multihead_attention(x, mask=decoder_mask)
+        x = self.masked_multihead_attention(x, mask=decoder_padding_mask, isCausal = True)
         x = self.dropout(x)
         x = self.layer_norm_1(x + residual)
 
         residual = x
-        x = self.multihead_cross_attention(encoder_output, x, mask=cross_attention_mask) ##check mask
+        x = self.multihead_cross_attention(encoder_output, x, mask=out_encoder_mask_keys) ##check mask
         x = self.dropout(x)
         x = self.layer_norm_2(x + residual)
 
@@ -61,12 +62,14 @@ class Decoder(nn.Module):
 
         self.decoder_layers = nn.ModuleList([DecoderLayer(embedding_size, num_heads, ff_hidden_size, dropout) for _ in range(num_layers)])
 
-    def forward(self, x, decoder_mask, encoder_output, cross_attention_mask=None):
+    def forward(self, x, decoder_padding_mask, encoder_output, out_encoder_mask_keys=None):
         '''
             The encoder output remains the same for all decoder layers
         '''
         for decoder_layer in self.decoder_layers:
-            x = decoder_layer(x, decoder_mask, encoder_output, cross_attention_mask)
+            x = decoder_layer(x=x,
+                              decoder_padding_mask=decoder_padding_mask,
+                              encoder_output=encoder_output, out_encoder_mask_keys=out_encoder_mask_keys)
         return x
 
 def main():

@@ -3,29 +3,30 @@
 seed: 42
 ##### DATASET PARAMETERS
 source_language:
-  name: English
+  name: english
   dataset_path: "./Datasets/it-en/europarl-v7.it-en.en"
-  vocabulary_path: "./Dataloaders/english_vocab.json"
+  vocabulary_path: "./Dataloaders/bpe_english_vocab.json"
 
 target_language:
-  name: Italian
+  name: italian
   dataset_path: "./Datasets/it-en/europarl-v7.it-en.it"
-  vocabulary_path: "./Dataloaders/italian_vocab.json"
-maximum_dataset_lenght: 200000
+  vocabulary_path: "./Dataloaders/bpe_italian_vocab.json"
 
 ###### ENCODER
 encoder:
-  vocab_size: 10000
+  vocab_size: 15000
+  padding_idx: None
   ## Actually not used. Extracted from the dataset
-  num_layers: 3
-  ff_hidden_size: 2048
+  num_layers: 1
+  ff_hidden_size: 256
 
 #### DECODER
 decoder:
-  vocab_size: 10000
+  vocab_size: 15000
   ## Actually not used. Extracted from the dataset
-  num_layers: 3
-  ff_hidden_size: 512
+  padding_idx: None
+  num_layers: 1
+  ff_hidden_size: 256
 
 #### BOTH
 same_source_target_vocabulary: False
@@ -35,20 +36,21 @@ num_heads: 2
 ignore_index: None ## Extracted from the dataset class
 
 ### TRAINING CONFIG
-hpc: True
+hpc: False
 wandb:
   project_name: "TransformerForDummies"
   key: 
 checkpoint_dir: "./checkpoints"
 logs_dir: "./logs"
-from_checkpoint: True
-train: False
-test: True
+
+from_checkpoint: False
+train: True
+test: False
 
 max_epochs: 10
 lr: 1e-3
 label_smoothing: 0.1
 with_scheduler: False ## False just use the learning rate, True use the scheduler and learning rate like in the original article
-batch_size: 16
+batch_size: 2
 dropout: 0.1
 warmup_steps: 4000

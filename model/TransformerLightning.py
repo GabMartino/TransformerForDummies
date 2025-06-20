@@ -13,7 +13,7 @@ from .Transformer import Transformer
 
 
 class TransformerLightning(pl.LightningModule):
-    def __init__(self, hparams):
+    def __init__(self, torch_model, hparams):
         super().__init__()
         self.save_hyperparameters()
         self.lr = hparams.lr
@@ -21,7 +21,7 @@ class TransformerLightning(pl.LightningModule):
         self.warmup_steps = hparams.warmup_steps
         self.with_scheduler = hparams.with_scheduler
 
-        self.model = Transformer(hparams)
+        self.model = torch_model
         self.training_loss_history = []
         self.validation_loss_history = []
         '''
@@ -30,18 +30,15 @@ class TransformerLightning(pl.LightningModule):
             Unfortunately in our implementation the padding strictly depend on the dataset so is passed as parameter
         '''
         self.ignore_index = hparams.ignore_index
-        print(self.ignore_index)
         self.loss = nn.CrossEntropyLoss(ignore_index=self.ignore_index, label_smoothing=hparams.label_smoothing)
 
-    def forward(self, x):
-        return self.model(x)
 
     def training_step(self, batch, batch_idx):
         source_batch, source_mask, target_batch, target_mask = batch
         x = self.model(encoder_input=source_batch,
                        decoder_input=target_batch,
-                       source_mask_keys=source_mask,
-                       target_mask_keys=target_mask)
+                       source_padding_mask_keys=source_mask,
+                       target_padding_mask_keys=target_mask)
         '''
             To implement the shift right:
             1. Roll the target batch to the left 
@@ -66,8 +63,8 @@ class TransformerLightning(pl.LightningModule):
         source_batch, source_mask, target_batch, target_mask = batch
         x = self.model(encoder_input=source_batch,
                        decoder_input=target_batch,
-                       source_mask_keys=source_mask,
-                       target_mask_keys=target_mask)
+                       source_padding_mask_keys=source_mask,
+                       target_padding_mask_keys=target_mask)
         target_batch_out = torch.roll(target_batch, -1, dims=-1)
         target_batch_out[:, -1] = self.ignore_index
         target_batch_out = target_batch_out.reshape(-1)
@@ -80,6 +77,14 @@ class TransformerLightning(pl.LightningModule):
         loss_mean = np.mean(self.validation_loss_history)
         self.validation_loss_history.clear()
         self.log("val_loss_epoch", loss_mean)
+
+    def on_after_backward(self):
+        for name, param in self.named_parameters():
+            if param.grad is not None:
+                if torch.isnan(param.grad).any():
+                    print(f"NaNs in gradient of {name}")
+                if torch.isinf(param.grad).any():
+                    print(f"Infs in gradient of {name}")
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, betas=(0.9, 0.98), eps=1e-9)

@@ -5,33 +5,26 @@ from tqdm import tqdm
 
 
 def main():
+    from tokenizers import Tokenizer, models, trainers, pre_tokenizers
 
+    # Initialize a tokenizer with BPE model
+    tokenizer = Tokenizer(models.BPE())
 
-    English_Vocab = {}
-    with open("../Datasets/it-en/europarl-v7.it-en.en", "r") as f:
-        for line in tqdm(f):
-            v = line.strip()
-            for token in word_tokenize(v):
-                English_Vocab[str(token).lower()] = True
+    # Pre-tokenize by whitespace
+    tokenizer.pre_tokenizer = pre_tokenizers.Whitespace()
 
-    for idx, k in tqdm(enumerate(English_Vocab.keys())):
-        English_Vocab[k] = idx
+    # Trainer to build vocab
+    trainer = trainers.BpeTrainer(vocab_size=15000, special_tokens=["[PAD]", "[SOS]", "[EOS]"])
 
-    with open("./english_vocab.json", "w") as f:
-        json.dump(English_Vocab, f)
+    # Load and train on your corpus
+    files = ["../Datasets/it-en/europarl-v7.it-en.it"]
+    tokenizer.train(files, trainer)
 
-    ############################################################################à
-    Italian_vocab = {}
-    with open("../Datasets/it-en/europarl-v7.it-en.it", "r") as f:
-        for line in tqdm(f):
-            v = line.strip()
-            for token in word_tokenize(v):
-                Italian_vocab[str(token).lower()] = True
+    # Save tokenizer
+    tokenizer.save("bpe_italian_vocab.json")
 
-    for idx, k in enumerate(Italian_vocab.keys()):
-        Italian_vocab[k] = idx
-    print(len(Italian_vocab.keys()))
-    with open("./italian_vocab.json", "w") as f:
-        json.dump(Italian_vocab, f)
+    # Encode text
+    output = tokenizer.encode("Example for Hugging Face BPE tokenizer.")
+    print(output.tokens)
 if __name__ == "__main__":
     main()
