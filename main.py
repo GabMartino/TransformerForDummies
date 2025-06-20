@@ -79,7 +79,7 @@ def main(cfg):
         trainer.fit(model, datamodule=datamodule)
 
     if cfg.test:
-        source_test_sentence = "[SOS] Questa è una frase di esempio. [EOS]"
+        source_test_sentence = "[SOS] This is an example. [EOS]"
         source_test_sentece_encoded = datamodule.dataset.source_tokenizer.encode(source_test_sentence).ids
         source_tensor = torch.LongTensor(source_test_sentece_encoded).unsqueeze(0)
 
